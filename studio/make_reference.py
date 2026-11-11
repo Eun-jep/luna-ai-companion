@@ -19,7 +19,7 @@ CHARS_PER_SECOND = 14
 
 def sentences():
     """Plain Russian sentences from the project's own texts: every sound of the language, no private data."""
-    text = (ROOT / 'README.txt').read_text(encoding='utf-8', errors='replace')
+    text = (ROOT / 'docs' / 'FEATURES.txt').read_text(encoding='utf-8', errors='replace')
     out = []
     for raw in re.split(r'[\r\n]+|(?<=[.!?])\s+', text):
         s = re.sub(r'\s+', ' ', raw).strip(' -•*#')

@@ -6,7 +6,7 @@ restarted, and secrets in the lines are masked. Stack traces inside the log are 
 import re
 
 from luna.dev import devtools
-import traces
+from luna.dev import traces
 
 MAX_REPORT = 2400
 MIN_LINES = 6

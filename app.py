@@ -95,7 +95,7 @@ from luna.skills import exact
 from luna.core import lexicon
 from luna.dev import gitdiff
 from luna.dev import sqlrun
-import traces
+from luna.dev import traces
 from luna.dev import logs
 from luna.dev import sqlcheck
 from luna.dev import testgen
