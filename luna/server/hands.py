@@ -5,7 +5,7 @@ from pathlib import Path
 from urllib.parse import unquote
 
 from luna import security
-from luna.core import audit, providers
+from luna.core import audit, catalog, providers
 from luna.dev import codescan, devtools, envdiag, gitdiff, godot_bridge, sqlrun, unity_bridge, unreal_bridge
 from luna.hands import codeedit, control, docfiles, nook, office, projects, runner, studio
 from luna.senses import hearing
@@ -73,7 +73,9 @@ class HandsRoutes:
                 providers.set_model(pid, body.get('model'))
                 return self.send(200, providers.state())
             if op == 'models':
-                return self.send(200, {'models': providers.models(pid)})
+                ids = providers.models(pid)
+                return self.send(200, {'models': ids, 'info': catalog.describe_all(pid, ids),
+                                       'picks': catalog.suggestions(ids) if pid == 'ollama' else []})
             if op == 'dismiss':
                 providers.dismiss(pid)
                 return self.send(200, providers.state())

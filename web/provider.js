@@ -94,6 +94,35 @@ function provRender() {
   provModels();
 }
 
+// ---- model catalog: short labels from luna/core/catalog.py ----
+function catTags(i) {
+  if (!i) return [];
+  return [i.rec && t('cat.rec'), i.tier && t('cat.' + i.tier), i.free && t('cat.free'), i.vision && t('cat.vision')].filter(Boolean);
+}
+const catLabel = (m, i) => catTags(i).length ? m + '  —  ' + catTags(i).join(', ') : m;
+function catHint() {
+  const i = (prov.info || {})[$('#prov-model').value], tags = catTags(i);
+  $('#prov-model-hint').textContent = tags.length ? tags.join(' · ') : t('cat.unknown');
+}
+function catPicks(picks) {
+  const box = $('#prov-picks');
+  box.hidden = !picks.length;
+  $('#prov-picks-list').replaceChildren(...picks.map(p => {
+    const row = document.createElement('div'), code = document.createElement('code'), note = document.createElement('span'), copy = document.createElement('button');
+    row.className = 'row';
+    code.textContent = p.command;
+    note.className = 'hint';
+    note.textContent = t('cat.size').replace('{gb}', p.gb).replace('{ram}', p.ram) + ' · ' + t('cat.' + p.tier) + (p.vision ? ' · ' + t('cat.vision') : '');
+    copy.type = 'button';
+    copy.textContent = t('cat.copy');
+    copy.addEventListener('click', () => navigator.clipboard.writeText(p.command).then(() => { copy.textContent = t('cat.copied'); }).catch(() => {}));
+    row.append(code, copy);
+    const wrap = document.createElement('div');
+    wrap.append(row, note);
+    return wrap;
+  }));
+}
+
 async function provModels() {
   const s = prov.state, row = $('#prov-model-row'), sel = $('#prov-model'), mine = ++prov.seq;
   if (!s || !s.active) { row.hidden = true; return; }
@@ -101,15 +130,20 @@ async function provModels() {
   sel.disabled = true;
   sel.replaceChildren(new Option(t('prov.loading'), ''));
   try {
-    const {models} = await provCall('models', {id: s.active});
+    const {models, info = {}, picks = []} = await provCall('models', {id: s.active});
     if (mine !== prov.seq) return;
     const current = provItem(s.active).model;
-    sel.replaceChildren(...models.map(m => new Option(m, m)));
+    prov.info = info;
+    sel.replaceChildren(...models.map(m => new Option(catLabel(m, info[m]), m)));
+    catPicks(picks);
     sel.value = models.includes(current) ? current : models[0];
     if (sel.value !== current) await provCall('model', {id: s.active, model: sel.value}).catch(() => {});
     sel.disabled = false;
+    catHint();
   } catch (e) {
     if (mine !== prov.seq) return;
+    catPicks([]);
+    $('#prov-model-hint').textContent = '';
     sel.replaceChildren(new Option(e.message, ''));   // e.g. "the program is not running"
   }
 }
@@ -185,7 +219,7 @@ $('#prov-del').addEventListener('click', async () => {
 $('#prov-model').addEventListener('change', async () => {
   const id = prov.state.active, model = $('#prov-model').value;
   if (!id || !model) return;
-  try { prov.state = await provCall('model', {id, model}); } catch (e) { setStatus(e.message, true); }
+  try { prov.state = await provCall('model', {id, model}); catHint(); } catch (e) { setStatus(e.message, true); }
 });
 $('#prov-scan').addEventListener('click', async () => {
   const b = $('#prov-scan');
