@@ -32,7 +32,7 @@ print('unclosed fence at end (final):', app.pull_code('Вот код ```js\nlet 
 # topics and the prompt block
 for t in ['как подключить Unreal?', 'как включить анрил', 'ренпай label', 'help with my Godot project', 'bug in my function', '언리얼 연결', 'ユニティ', 'привет как дела']:
     print(repr(t), '->', devtools.topics(t))
-app.AGENT = True
+app.S.agent = True
 p = app.system_prompt('как мне подключить Unreal Engine к тебе?')
 print('prompt has unreal guide:', 'Python Editor Script Plugin' in p, '| facts:', 'AsianLegends' in p, '| probe line:', 'Проверка прямо сейчас' in p)
 print('no topic -> no dev block:', 'разработчица' not in app.system_prompt('привет'))

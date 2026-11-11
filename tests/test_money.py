@@ -37,4 +37,4 @@ ok('a server error is also an honest no', 'не удалось' in money.hint('1
 netsearch._get = lambda url, accept='': (200, {}, b'not json')
 ok('garbage from the service is an honest no', 'не удалось' in money.hint('100 USD to KRW', True))
 src = open(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'app.py'), encoding='utf-8').read()
-ok('wired into the chat route with the Actions switch', 'money.hint(text, AGENT)' in src)
+ok('wired into the chat route with the Actions switch', 'money.hint(text, S.agent)' in src)

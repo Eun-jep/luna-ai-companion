@@ -2,6 +2,7 @@
 for chat; speech synthesis uses the optional `edge-tts` package."""
 from luna import paths
 from luna import security
+from luna.core.session import S
 from luna.core.script import (BOUNDARY_RE, clean_script, CYRILLIC_RE, EMOJI_RE, EMOTIONS, FOREIGN_RE, GESTURES, HANGUL_RE, JA_RE, JA_VOICE, LOOK_TARGETS, MAX_MESSAGE, MAX_STORED, MIN_CHUNK, NATIVE_VOICES, parse_plan, parse_script, pick_voice, PLAN_MAX, PLAN_MIN, PLAN_STEP, pull_code, split_ready, tts_clean, TTS_VOICE, VALID_TAGS)   # noqa: F401  (pure helpers: stage directions, voice choice, sentence cutting; some are re-exported for the tests)
 from luna.core.models import list_models, parameter_labels   # noqa: F401  (the Live2D models on disk; re-exported for the tests)
 import asyncio
@@ -138,10 +139,6 @@ from luna.core.character import (HISTORY, MEMORY, MEMORY_LIMIT, MEMORY_EVERY, RE
                        mood_now, mood_from_script, describe_mood, update_memory, reflect)
 character.use_embeddings(CONFIG.get('embeddings'))   # optional: "embeddings": "ollama:nomic-embed-text" in settings.json (meaning-based recall)
 character.llm = lambda messages: generate(messages)   # the character thinks through whichever network is chosen
-AGENT = False
-WORK = False          # work mode: code, commands, projects, engines, documents (off for everyday talk)
-UNREAL = False        # the creator also allowed her to build in Unreal Engine (a fixed list of operations)
-CONTROL = False       # the creator also allowed her to work the mouse and keyboard (desktop window only)
 
 
 def load_state():
@@ -271,8 +268,6 @@ def generate_stream(messages, model=None, vision=False, max_tokens=800):
 
 
 LANGS = {'en': 'английский (English)', 'ru': 'русский', 'ko': 'корейский (한국어)', 'ja': 'японский (日本語)'}
-UI_LANG = 'en'
-LAST_LANG = None
 
 
 NOOK_RULES = (
@@ -291,24 +286,24 @@ def system_prompt(topic='', thought=''):
     query = ' '.join([topic] + [m['content'] for m in HISTORY[-4:] if not m['content'].startswith(NOTE)])
     text = CONFIG['personality'] + character.persona_block() + (
         '\n\nТы в прямом эфире: личные факты и воспоминания о создателе сейчас не озвучиваются.' if stream.ON else character.memory_block(query)) + character.mood_block() + character.listen_block() + character.style_block()
-    if PRESENCE and not stream.ON:
+    if S.presence and not stream.ON:
         text += convo.summary_block(SUMMARY['text'])
     text += ('\n\nСообщения, начинающиеся с «[служебная заметка…]», — подсказки приложения, когда тебе пора заговорить '
              'самой. Это не слова создателя: не цитируй их и не упоминай.')
     text += ('\n\n%s Фон за тобой: %s. Учитывай время суток в тоне (утром бодрее, ночью тише и уютнее), но не называй время '
-             'в каждой реплике.' % (time_context(), SCENES[SCENE]))
+             'в каждой реплике.' % (time_context(), SCENES[S.scene]))
     text += '' if stream.ON else character.interests_block() + character.tastes_block() + character.bits_block() + character.legend_block()
     text += ('\n\nЯзык: основной язык вашего общения сейчас — %s, так выбрал создатель в настройках. Отвечай и заговаривай '
              'первой на нём (включая подписи к своим эмоциям: сами команды в квадратных скобках остаются английскими). '
              'Но ты знаешь все языки и не ограничена этим: если создатель пишет на другом языке, просит перевести, '
-             'объяснить слово или поговорить на другом языке, свободно используй нужный.' % LANGS[UI_LANG])
+             'объяснить слово или поговорить на другом языке, свободно используй нужный.' % LANGS[S.ui_lang])
     if not stream.ON:
         text += NOOK_RULES + nook.block()
     if stream.ON:
         text += stream.RULES
-    elif PRESENCE:
+    elif S.presence:
         text += PRESENCE_RULES + character.opinions_block(query) + convo.thoughts_block(thought)
-    if AGENT:
+    if S.agent:
         acts = load_actions()
         text += ('\n\nРуки: ты умеешь открывать на его компьютере то, что есть в этом списке (id — название):\n' +
                  bullets('%s — %s%s' % (a['id'], a['label'], ' (%s)' % a['about'] if a['about'] else '') for a in acts.values()) +
@@ -332,9 +327,9 @@ def system_prompt(topic='', thought=''):
             "[do:открой Блокнот и напиши список покупок]). Приложение покажет создателю плашку «Начать?»; пока он не нажмёт, ничего "
             "не происходит, и он может остановить тебя в любой момент. Описывай задачу одной ясной фразой его словами. Пароли, "
             "платежи и личные данные тебе вводить нельзя. Не обещай больше, чем умеешь: ты действуешь медленно и можешь ошибиться, "
-            "так и скажи." if CONTROL else
+            "так и скажи." if S.control else
             ' Ты не умеешь кликать, печатать и управлять другими программами: не обещай этого.')
-        if UNREAL:
+        if S.unreal:
             text += (
                 "\n- [ue:операция] — строить в Unreal Engine (редактор должен быть открыт; приложение спросит создателя «выполнить?»). "
                 "Операции строго такие: spawn <cube|sphere|cylinder|cone|plane|pointlight|spotlight|directionallight> [x y z [масштаб]] — "
@@ -449,9 +444,9 @@ def system_prompt(topic='', thought=''):
                 '\nЧтобы добавить файлы в такую папку, в блоке lunaproject вместо "project" укажи "workspace":"Имя папки" (как в кавычках выше), '
                 "а пути пиши относительно этой папки. Существующие файлы так не изменить (они не перезаписываются): для них нужен lunaedit "
                 "после того, как он покажет тебе файл. Не выходи за пределы папки и не придумывай файлы, которых там нет.")
-        if WORK:
+        if S.work:
             text += standup.block()
-        if not WORK:
+        if not S.work:
             text = text[:work_from] + WORK_OFF
             text = re.sub(r'- \[read:имя файла\][^\n]*\n', '', text)
         done = audit.recent_text()
@@ -464,11 +459,11 @@ def system_prompt(topic='', thought=''):
         "приложение само включит запись, а ты коротко и тепло скажи, что сейчас исполнишь её (петь словами не нужно, блоков не ставь). "
         "Если просит спеть то, чего в библиотеке нет, тепло объясни, что сама не поёшь, а записи исполняешь, и предложи добавить песню "
         "в Настройки → Песни. Сама без просьбы не исполняй. " + library_line())
-    if CAMERA_ON:
+    if S.camera_on:
         text += ('\n\nУ тебя сейчас включена камера: ты видишь только, где находится создатель, улыбается ли он и ушёл ли. '
                  'Картинки ты не получаешь, поэтому не описывай его внешность, одежду и комнату и не выдумывай увиденное. '
                  'Можешь изредка и к слову заметить, что видишь его рядом.')
-    if topic and WORK:
+    if topic and S.work:
         dev = devtools.dev_block(topic, [m['content'] for m in HISTORY[-4:] if not m['content'].startswith(NOTE)])
         if dev:
             if 'unreal' in devtools.topics(topic + ' ' + ' '.join(m['content'] for m in HISTORY[-4:])):
@@ -507,8 +502,6 @@ INITIATIVES = {
             'Если сейчас нет желания говорить, ответь ровно одним словом [quiet] и промолчи.',
     'return': 'Создатель отходил, а теперь вернулся: ты увидела его в камеру. Скажи что-нибудь тёплое и короткое, '
               'как рада, что он снова рядом. Не упрекай за отсутствие.'}
-CAMERA_ON = False   # the page tells us per turn whether the camera is active
-PRESENCE = False    # "live conversation" mode: she behaves like a person sharing the room
 PRESENCE_RULES = (
     '\n\nСейчас включён режим живого общения: вы как два человека в одной комнате. Тишина — это нормально, не нужно '
     'заполнять каждую паузу. Иногда можно сказать что-то по своей инициативе: мысль, воспоминание, наблюдение, шутку, '
@@ -561,7 +554,6 @@ INITIATIVES['late'] = ('Сейчас глубокая ночь, а создат�
 INITIATIVES['scene'] = 'Только что изменился фон за тобой: теперь %s. Отреагируй на это по-своему, одной короткой фразой.'
 SCENES = {'night': 'тёмный ночной фон со звёздной атмосферой', 'day': 'светлый дневной фон',
           'green': 'ровный зелёный фон, как на хромакее (для записи или стрима)'}
-SCENE = 'night'   # the backdrop she stands in front of; the page reports it each turn
 WEEKDAYS = ['понедельник', 'вторник', 'среда', 'четверг', 'пятница', 'суббота', 'воскресенье']
 
 
@@ -703,19 +695,18 @@ WORK_OFF = ("\n\nРабочий режим сейчас выключен: пра
 def chat_turn(data):
     """One conversation turn as a stream of events: {'answer', 'script'} per sentence, then {'done', 'mood'}.
     Sentences are cut from the model's text as it is written, so speech can start before the reply is finished."""
-    global CAMERA_ON, SCENE, PRESENCE, UI_LANG, LAST_LANG, AGENT, CONTROL, UNREAL, WORK
-    AGENT = isinstance(data, dict) and data.get('agent') is True and not stream.ON   # no hands on the stream
-    WORK = AGENT and data.get('work') is True
-    UNREAL = WORK   # Unreal is part of her hands: every operation still waits for the creator's press
-    CONTROL = AGENT and data.get('control') is True
-    CAMERA_ON = isinstance(data, dict) and data.get('camera') is True
-    PRESENCE = isinstance(data, dict) and data.get('presence') is True and not stream.ON
-    UI_LANG = data.get('lang') if isinstance(data, dict) and data.get('lang') in LANGS else 'en'
-    if LAST_LANG not in (None, UI_LANG):   # the language was switched: old replies in the other language would pull her back
+    S.agent = isinstance(data, dict) and data.get('agent') is True and not stream.ON   # no hands on the stream
+    S.work = S.agent and data.get('work') is True
+    S.unreal = S.work   # Unreal is part of her hands: every operation still waits for the creator's press
+    S.control = S.agent and data.get('control') is True
+    S.camera_on = isinstance(data, dict) and data.get('camera') is True
+    S.presence = isinstance(data, dict) and data.get('presence') is True and not stream.ON
+    S.ui_lang = data.get('lang') if isinstance(data, dict) and data.get('lang') in LANGS else 'en'
+    if S.last_lang not in (None, S.ui_lang):   # the language was switched: old replies in the other language would pull her back
         del HISTORY[:-2]
-    LAST_LANG = UI_LANG
+    S.last_lang = S.ui_lang
     if isinstance(data, dict) and data.get('scene') in SCENES:
-        SCENE = data['scene']
+        S.scene = data['scene']
     initiative = data.get('initiative') if isinstance(data, dict) else None
     if initiative:   # she speaks first: a service note instead of a user message
         if initiative not in INITIATIVES or (initiative.startswith('stream') and not stream.ON) or (stream.ON and initiative in ('screen', 'media', 'care', 'late', 'scene', 'return', 'remind')):
@@ -747,8 +738,8 @@ def chat_turn(data):
             text = NOTE + ('Время, на которое он просил напомнить, пришло: %s. Скажи ему об этом сама, коротко и тепло, как близкий человек, '
                            'одной-двумя фразами, без «напоминаю вам».' % '; '.join('«%s»' % (e['text'] or 'он не уточнил, о чём') for e in ripe))
         if initiative == 'scene':
-            text = text % SCENES[SCENE]
-        elif initiative == 'idle' and PRESENCE:
+            text = text % SCENES[S.scene]
+        elif initiative == 'idle' and S.presence:
             last = HISTORY[-1] if HISTORY else None
             asked = last and last['role'] == 'assistant' and convo.ends_question(TAG_RE.sub('', last['content']))
             text = NOTE + (NUDGE if asked else convo.idle_prompt(SUMMARY['text'], IDLE_PRESENCE, random.choice, character.MEMORY['user'], mood=character.mood_now(), views=['%s: %s' % (o['topic'], o['view']) for o in character.MEMORY['opinions'][-6:]]))
@@ -782,7 +773,7 @@ def chat_turn(data):
         hint = SCREEN_OFF_HINTS[data['screen_off']]
     if stream.ON and not initiative:   # he speaks into the stream: she answers the host first
         hint += ' [Это говорит хост, создатель, в эфире: ответь ему, ты на стриме.]'
-    if WORK and not initiative:   # a stack trace or a test run in his message (or in a command output): the program reads it first
+    if S.work and not initiative:   # a stack trace or a test run in his message (or in a command output): the program reads it first
         diag = traces.analyze(text)
         if diag:
             hint += ' [' + diag + ']'
@@ -790,13 +781,13 @@ def chat_turn(data):
             note = reader(text)
             if note:
                 hint += ' [' + note + ']'
-    if PRESENCE and not initiative:   # how a real interlocutor would answer this very message
+    if S.presence and not initiative:   # how a real interlocutor would answer this very message
         now = time.time()
         gap = now - LAST_USER['t'] if LAST_USER['t'] else 0
         LAST_USER['t'] = now
         convo.observe(text)
         cut = data.get('cut') if isinstance(data.get('cut'), str) else ''
-        hint += convo.hints(HISTORY, text, gap, cut[:150], random.choice, facts=character.MEMORY['user'], mood=character.mood_now(), held=bool(character.opinions_for(text)), web=AGENT)
+        hint += convo.hints(HISTORY, text, gap, cut[:150], random.choice, facts=character.MEMORY['user'], mood=character.mood_now(), held=bool(character.opinions_for(text)), web=S.agent)
     if not initiative and isinstance(data.get('media'), str):   # "how do you like it?": she knows what is playing
         info = media.detect(data['media'])
         if info:
@@ -818,13 +809,13 @@ def chat_turn(data):
             hint += dates.handle(text)   # calendar counting ("how many days until", "what date in 100 days", age): the program knows today and counts exactly
             hint += habits.handle(text)   # habits and streaks: counted by the program, she only retells
             hint += manners.handle(text) or manners.standing()   # his own requests about her manner ("shorter", "no jokes", "call me X"): kept if standing, reminded every turn
-            hint += pcstate.hint(text, AGENT)   # "why is my pc slow / how much disk": read-only numbers from his computer, only with the Actions switch on
-            hint += abilities.hint(text, AGENT, WORK)   # "what can you do": a true list for this moment (which switches are on), no boasting and no forgetting
+            hint += pcstate.hint(text, S.agent)   # "why is my pc slow / how much disk": read-only numbers from his computer, only with the Actions switch on
+            hint += abilities.hint(text, S.agent, S.work)   # "what can you do": a true list for this moment (which switches are on), no boasting and no forgetting
             hint += gameerrors.hint(text)   # an engine error pasted in: recognised by its fixed text, usual cause and first check from a table
             hint += recipes.hint(text)   # "build a platformer in Godot": a checked recipe, three operations per reply (the cap), each still waits for his press
             hint += engines.analysis_hint(text) or engines.mention_hint(text)   # "analyze my project" (read-only look at his folder) or facts about an engine he asks about
             hint += chance.hint(text)   # a coin, dice, a random number, "pick one": thrown by the program, not guessed by the model
-            hint += money.hint(text, AGENT)   # an exchange rate on request: from the internet, so only with the Actions switch on
+            hint += money.hint(text, S.agent)   # an exchange rate on request: from the internet, so only with the Actions switch on
         if not (isinstance(data, dict) and data.get('web')):   # the practice mode is switched only by his own words, never by text from the internet
             hint += character.tutor_hint(character.note_tutor(text))
         else:
@@ -853,7 +844,7 @@ def chat_turn(data):
             save_memory()
     hint += faces.hint(data.get('fx') if isinstance(data, dict) else None, data.get('mo') if isinstance(data, dict) else None)   # the special faces her model has (the page names them)
     # Said right next to the message, where it outweighs earlier replies written in another language.
-    hint += ' [Язык ответа: %s. Если он просит иной язык или перевод, сделай как просит.]' % LANGS[UI_LANG]
+    hint += ' [Язык ответа: %s. Если он просит иной язык или перевод, сделай как просит.]' % LANGS[S.ui_lang]
     sent = user if not image and not hint else {'role': 'user', 'content': user['content'] + hint} if not image else {
         'role': 'user', 'content': [{'type': 'image_url', 'image_url': {'url': image}},
                                     {'type': 'text', 'text': user['content'] + hint}]}
@@ -895,7 +886,7 @@ def chat_turn(data):
             for m in nook.NOTE_RE.finditer(piece):
                 if len(jots) < 2:
                     jots.append(m.group(1))
-        if AGENT and not initiative:   # her own initiative never gets hands: only a request from the user does
+        if S.agent and not initiative:   # her own initiative never gets hands: only a request from the user does
             acts = load_actions()
             for m in ACT_RE.finditer(piece):
                 kind, arg = m.group(1).lower(), m.group(2).strip()
@@ -907,10 +898,10 @@ def chat_turn(data):
                     a = acts.get(arg.lower())
                     if a and a['id'] not in [x['id'] for x in asked]:
                         asked.append(a)
-                elif kind == 'doc' and WORK:
+                elif kind == 'doc' and S.work:
                     if not docreads:
                         docreads.append(arg)
-                elif kind == 'move' and WORK:
+                elif kind == 'move' and S.work:
                     if not moves:
                         moves.append(arg)
                 elif kind == 'go':
@@ -922,52 +913,52 @@ def chat_turn(data):
                 elif kind == 'calc':
                     if not sums and depth < 2:
                         sums.append(arg)
-                elif kind == 'read' and WORK:
+                elif kind == 'read' and S.work:
                     if len(reads) < 3 and arg not in reads:   # a few files of one project: he presses Show for each
                         reads.append(arg)
-                elif kind == 'run' and WORK:
+                elif kind == 'run' and S.work:
                     if len(runs) < 1:
                         runs.append(arg)
-                elif kind == 'diff' and WORK:
+                elif kind == 'diff' and S.work:
                     if not diffs:
                         diffs.append(arg)
-                elif kind == 'sql' and WORK:
+                elif kind == 'sql' and S.work:
                     if not sqls:
                         sqls.append(arg)
-                elif kind == 'env' and WORK:
+                elif kind == 'env' and S.work:
                     if not envs:
                         envs.append(arg)
-                elif kind == 'scan' and WORK:
+                elif kind == 'scan' and S.work:
                     if not scans:
                         scans.append(arg)
-                elif kind == 'unity' and WORK:
+                elif kind == 'unity' and S.work:
                     if len(un_ops) < 3:
                         un_ops.append(arg)
                     else:
                         CAPPED['unity'] = True   # a fourth operation is not queued: he is told, so she cannot claim it was done
-                elif kind == 'gd' and WORK:
+                elif kind == 'gd' and S.work:
                     if len(gd_ops) < 3:
                         gd_ops.append(arg)
                     else:
                         CAPPED['godot'] = True
                 elif kind == 'ue':
-                    if UNREAL and len(ue_ops) < 2:
+                    if S.unreal and len(ue_ops) < 2:
                         ue_ops.append(arg)
                 elif kind == 'do':
-                    if CONTROL and not tasks:
+                    if S.control and not tasks:
                         tasks.append(arg)
                 elif kind == 'plan':
                     steps = parse_plan(arg)
-                    if AGENT and not tainted and steps and not plans:
+                    if S.agent and not tainted and steps and not plans:
                         plans.append(steps)
                 elif kind == 'clip':
-                    if AGENT and not tainted and not clips:
+                    if S.agent and not tainted and not clips:
                         clips.append(arg)
                 elif kind in ('doc', 'move', 'read', 'run', 'gd', 'unity', 'scan', 'diff', 'env'):
                     pass   # work commands while work mode is off: nothing happens
                 elif arg and (kind, arg.lower()) not in lookups:
                     lookups.append((kind, arg.lower()))
-        if PRESENCE or stream.ON:
+        if S.presence or stream.ON:
             piece = convo.polish(piece)
         script, spoken = clean_script(piece)
         if not spoken:   # directions only: they belong in front of the next sentence
@@ -988,14 +979,14 @@ def chat_turn(data):
         shown = (full + ''.join('\n```%s\n%s\n```' % (c['lang'], c['text'][:12000 if c['lang'] in ('lunadoc', 'lunaedit', 'lunaproject') else MAX_STORED]) for c in codes)).strip()
         if not initiative and convo.WRONG.search(str(text or '')) and len(HISTORY) >= 2 and HISTORY[-2].get('role') == 'user':   # he corrected her: remember where
             character.learn_lesson(HISTORY[-2]['content'], text)
-        if PRESENCE and not initiative:   # he laughed at what she just said: that is now a joke of the two of them
+        if S.presence and not initiative:   # he laughed at what she just said: that is now a joke of the two of them
             joke = convo.landed_joke(HISTORY, text)
             if joke:
                 character.add_bits(['Он смеялся над её словами: «%s»' % joke[:120]])
-        if PRESENCE and not initiative:   # did she claim to remember something of his that she does not know?
+        if S.presence and not initiative:   # did she claim to remember something of his that she does not know?
             DOUBT['claim'] = recall.ungrounded(full, list(MEMORY['user']) + [SUMMARY['text']] + [_m['content'] for _m in HISTORY if _m.get('role') == 'user' and isinstance(_m.get('content'), str)] + [text])
         HISTORY.extend([dict(user, content=user['content'][:MAX_STORED]), {'role': 'assistant', 'content': shown}])
-        del HISTORY[:-(20 if PRESENCE else 12)]
+        del HISTORY[:-(20 if S.presence else 12)]
         if not initiative:
             MEMORY['turns'] += 1
             character.note_activity()
@@ -1008,7 +999,7 @@ def chat_turn(data):
             threading.Thread(target=update_memory, args=(list(HISTORY[-8:]),), daemon=True).start()
         if not initiative and not stream.ON and MEMORY['turns'] % REFLECT_EVERY == 0:
             threading.Thread(target=reflect, daemon=True).start()
-        if PRESENCE and not initiative and MEMORY['turns'] - SUMMARY['turn'] >= 4:   # keep the thread of a long talk
+        if S.presence and not initiative and MEMORY['turns'] - SUMMARY['turn'] >= 4:   # keep the thread of a long talk
             SUMMARY['turn'] = MEMORY['turns']
             threading.Thread(target=refresh_summary, args=(list(HISTORY[-12:]),), daemon=True).start()
 
@@ -1020,12 +1011,12 @@ def chat_turn(data):
             if not stream.ON:
                 character.touch_opinions(text)   # her tastes grow with what you keep talking about
         thought = ''
-        if PRESENCE and not initiative and not image and convo.worth_thinking(text):   # she thinks before she speaks
+        if S.presence and not initiative and not image and convo.worth_thinking(text):   # she thinks before she speaks
             seen_view = {}
             thought = convo.think(generate, HISTORY, text, SUMMARY['text'], '; '.join('%s: %s' % (o['topic'], o['view']) for o in character.opinions_for(text)), seen_view, hard=convo.is_hard(text))
             if seen_view.get('topic') and seen_view.get('view'):
                 character.set_opinion(seen_view['topic'], seen_view['view'], seen_view.get('like', 0))
-        messages = [{'role': 'system', 'content': system_prompt('' if initiative else text, thought)}] + HISTORY[-(20 if PRESENCE else 12):] + [sent]
+        messages = [{'role': 'system', 'content': system_prompt('' if initiative else text, thought)}] + HISTORY[-(20 if S.presence else 12):] + [sent]
         def feed(final=False):
             """Sentences and code blocks that the buffer holds so far, in order."""
             nonlocal buffer
@@ -1043,19 +1034,19 @@ def chat_turn(data):
                 pending = ''
                 codes.append(val)
                 if val['lang'] == 'lunaedit':   # not shown as code: it becomes a diff plate
-                    if AGENT and WORK and not initiative and len(edits) < 6:
+                    if S.agent and S.work and not initiative and len(edits) < 6:
                         edits.append(val['text'])
                     continue
                 if val['lang'] == 'lunaproject':   # not shown as code: it becomes a plate listing every file
-                    if AGENT and WORK and not initiative and len(projs) < 1:
+                    if S.agent and S.work and not initiative and len(projs) < 1:
                         projs.append(val['text'])
                     continue
                 if val['lang'] == 'lunastandup':   # not shown as code: it is written down
-                    if AGENT and WORK and not initiative and not notes:
+                    if S.agent and S.work and not initiative and not notes:
                         notes.append(val['text'])
                     continue
                 if val['lang'] == 'lunadoc':   # not shown as code: it becomes a plate
-                    if AGENT and WORK and not initiative and len(docs) < 2:
+                    if S.agent and S.work and not initiative and len(docs) < 2:
                         docs.append(val['text'])
                     continue
                 yield {'code': val}
@@ -1077,7 +1068,7 @@ def chat_turn(data):
         if not scripts and not codes:
             raise RuntimeError('API вернул пустой ответ. Попробуй короткое сообщение ещё раз.')
         commit()
-        if AGENT and not initiative and not tainted and not (asked or lookups or sites or webs or sums or reads or runs or docreads or moves or clips or plans):
+        if S.agent and not initiative and not tainted and not (asked or lookups or sites or webs or sums or reads or runs or docreads or moves or clips or plans):
             for kind, arg in agent.intent_commands(text, netsearch.known_site):   # he asked plainly and she forgot the command: it is still done
                 (sites if kind == 'go' else lookups).append(arg if kind == 'go' else (kind, arg))
         for a in asked[:2]:

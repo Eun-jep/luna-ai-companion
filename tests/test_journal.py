@@ -67,7 +67,7 @@ ok('she cannot request an undo herself', unreal_bridge.propose('undo') is None)
 SECRET = 'sk-NEVER-IN-JOURNAL-123456'
 audit.log('key.set', 'OpenAI')
 ok('no secret in the journal file', SECRET not in audit.FILE.read_text(encoding='utf-8'))
-app.AGENT = True
+app.S.agent = True
 p = app.system_prompt('что ты делала?')
 ok('prompt tells her what she really did', 'Что ты на самом деле делала руками' in p and 'сохранила ключ для OpenAI' in p)
 audit.FILE.write_text('', encoding='utf-8')
