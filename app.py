@@ -2,6 +2,8 @@
 for chat; speech synthesis uses the optional `edge-tts` package."""
 from luna import paths
 from luna import security
+from luna.core.script import (BOUNDARY_RE, clean_script, CYRILLIC_RE, EMOJI_RE, EMOTIONS, FOREIGN_RE, GESTURES, HANGUL_RE, JA_RE, JA_VOICE, LOOK_TARGETS, MAX_MESSAGE, MAX_STORED, MIN_CHUNK, NATIVE_VOICES, parse_plan, parse_script, pick_voice, PLAN_MAX, PLAN_MIN, PLAN_STEP, pull_code, split_ready, tts_clean, TTS_VOICE, VALID_TAGS)   # noqa: F401  (pure helpers: stage directions, voice choice, sentence cutting; some are re-exported for the tests)
+from luna.core.models import list_models, parameter_labels   # noqa: F401  (the Live2D models on disk; re-exported for the tests)
 import asyncio
 import itertools
 import json
@@ -18,7 +20,7 @@ import urllib.request
 import urllib.error
 import webbrowser
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
-from urllib.parse import unquote, quote
+from urllib.parse import unquote
 
 try:
     import edge_tts
@@ -33,9 +35,6 @@ LOCK = threading.Lock()
 CONFIG = json.loads((ROOT / 'settings.json').read_text(encoding='utf-8'))
 
 
-EMOTIONS = ['neutral', 'happy', 'sad', 'angry', 'surprised', 'shy', 'love', 'confused', 'excited', 'disgusted', 'scared']
-GESTURES = ['nod', 'shake', 'tilt', 'wink', 'lean', 'shrug', 'bow', 'giggle', 'puff', 'blush', 'sigh', 'bounce']
-LOOK_TARGETS = ['user', 'left', 'right', 'up', 'down', 'away']
 # The reply is a "script": speech with inline stage directions the avatar performs in time with the voice.
 PROTOCOL = (
     '\n\nФормат ответа: твоя реплика будет озвучена голосом и сыграна анимированным аватаром — ты управляешь его '
@@ -56,27 +55,10 @@ PROTOCOL = (
     'когда есть повод, не на каждой реплике.\n'
     'Пример: [happy] Привет! [nod] Рада тебя слышать. [look:up] Дай-ка подумать… [look:user] [tilt] А ты как?')
 
-# One multilingual neural voice reads every language; its character is shaped by pitch/rate in the UI.
-TTS_VOICE = 'en-US-AvaMultilingualNeural'
-JA_VOICE = 'ja-JP-NanamiNeural'   # reads only Japanese (and some Latin text); fails on Russian/Korean
-FOREIGN_RE = re.compile('[Ѐ-ӿ가-힯ᄀ-ᇿ]')   # Cyrillic, Hangul
-JA_RE = re.compile('[぀-ヿ一-鿿]')
 
 
-NATIVE_VOICES = {'ru': 'ru-RU-SvetlanaNeural', 'ko': 'ko-KR-SunHiNeural', 'ja': JA_VOICE}   # "own voice of the language" option
-HANGUL_RE = re.compile('[가-힯ᄀ-ᇿ]')
-CYRILLIC_RE = re.compile('[Ѐ-ӿ]')
 
 
-def pick_voice(text, native=False):
-    """Nanami for Japanese speech, the multilingual voice for everything else.
-    native=True: a native voice for text written in one non-English script (better stress and intonation)."""
-    if native:
-        if HANGUL_RE.search(text):
-            return NATIVE_VOICES['ko']
-        if CYRILLIC_RE.search(text) and not JA_RE.search(text):
-            return NATIVE_VOICES['ru']
-    return JA_VOICE if JA_RE.search(text) and not FOREIGN_RE.search(text) else TTS_VOICE
 
 
 # How the mood shapes the voice: (rate %, pitch Hz) added to the user's own settings, so a happy line sounds brighter
@@ -198,23 +180,10 @@ def run_action(act):
         webbrowser.open(act['target'])
     else:
         os.startfile(act['target'])   # a program, a file or a protocol link (steam://...), exactly as the user wrote it
-EMOJI_RE = re.compile('[\U0001F000-\U0001FAFF\u2600-\u27BF\uFE0F\u200d]')
 
 
-def tts_clean(text):
-    """Text as it should be spoken: no emoji, markdown, links or leftover tags; pauses the voice understands."""
-    text = TAG_RE.sub('', text)
-    text = re.sub(r'https?://\S+', '', text)
-    text = EMOJI_RE.sub('', text)
-    text = re.sub(r'[*_#`~<>|^]+', '', text)
-    text = text.replace('…', '...').replace(' — ', ', ').replace(' – ', ', ')
-    text = re.sub(r'([!?])\1{2,}', r'\1', text)     # "!!!" -> "!"
-    text = re.sub(r'\.{4,}', '...', text)
-    text = re.sub(r'\s+', ' ', text).strip(' ,;:-')
-    return text
 
 
-VALID_TAGS = set(EMOTIONS) | set(GESTURES) | {'look:' + t for t in LOOK_TARGETS} | {'fx:' + n for n in faces.FX} | {'mo:' + n for n in faces.MOTIONS}
 
 
 def open_api(messages, stream=False, max_tokens=800, model=None, vision=False):
@@ -297,21 +266,8 @@ def generate_stream(messages, model=None, vision=False, max_tokens=800):
         raise RuntimeError('Неожиданный формат ответа API.') from None
 
 
-BOUNDARY_RE = re.compile(r'[.!?…]+[»"\')\]]*(?=\s)|[。！？]+|\n+')   # end of a sentence (not the dot of 3.5)
-MIN_CHUNK = 12   # spoken characters: shorter pieces are joined to the next sentence
 
 
-def split_ready(buffer):
-    """Cut finished sentences off the front of the buffer -> (sentences, unfinished rest)."""
-    pieces, pos = [], 0
-    for match in BOUNDARY_RE.finditer(buffer):
-        piece = buffer[pos:match.end()]
-        if piece.count('[') > piece.count(']'):   # a command is still being written: do not cut inside it
-            continue
-        if len(TAG_RE.sub('', ACT_RE.sub('', piece)).strip()) >= MIN_CHUNK:
-            pieces.append(piece.strip())
-            pos = match.end()
-    return pieces, buffer[pos:]
 
 
 LANGS = {'en': 'английский (English)', 'ru': 'русский', 'ko': 'корейский (한국어)', 'ja': 'японский (日本語)'}
@@ -324,14 +280,8 @@ NOOK_RULES = (
     'идеи, что тебя удивило или тронуло. Запись: [note:название >> текст] (текст до 500 знаков, без квадратных скобок; та же тема дописывается в ту же '
     'запись). Это твоё: пиши, когда хочется, сколько хочется, о чём хочешь, но не по счёту и не как отчёт. Пароли, ключи и чужие секреты туда не '
     'пиши. Создатель может открыть папку и прочитать, и ему сообщат о каждой записи: пиши так, как не стыдно, и не трать слова на объяснения.')
-PLAN_MIN, PLAN_MAX, PLAN_STEP = 2, 6, 120
 
 
-def parse_plan(arg):
-    """The steps of [plan:a | b | c]: two to six short steps, or [] when it is not a usable plan."""
-    steps = [' '.join(s.split()) for s in str(arg or '').split('|')]
-    steps = [s for s in steps if len(s) >= 3]
-    return [s[:PLAN_STEP] for s in steps[:PLAN_MAX]] if len(steps) >= PLAN_MIN else []
 
 
 def system_prompt(topic='', thought=''):
@@ -621,20 +571,8 @@ def time_context():
     return 'Сейчас %s, %s, %02d:%02d (%s).' % (WEEKDAYS[now.weekday()], now.strftime('%d.%m.%Y'), now.hour, now.minute, part)
 
 
-def parse_script(raw):
-    """Model reply -> (script, spoken). The script keeps only known stage directions (the model
-    may invent others); spoken is the same text with every direction removed."""
-    script, spoken = clean_script(raw)
-    return (script, spoken) if spoken else ('[neutral]', TAG_RE.sub('', raw).strip() or 'Хм.')
 
 
-def clean_script(raw):
-    def keep(match):
-        tag = match.group(1).lower() + (':' + match.group(2).lower() if match.group(2) else '')
-        return '[%s]' % tag if tag in VALID_TAGS else ''
-    script = re.sub(r'[ \t]{2,}', ' ', TAG_RE.sub(keep, ACT_RE.sub('', raw))).strip()
-    spoken = re.sub(r'[ \t]{2,}', ' ', TAG_RE.sub('', script)).strip()
-    return script, spoken
 
 
 def synthesize(text, voice, rate=0, pitch=0, volume=0):
@@ -745,74 +683,16 @@ def ears_hint(text, data):
 LISTEN_LOCK = threading.Lock()
 
 
-def url_for(path):
-    return '/' + '/'.join(quote(part) for part in path.relative_to(ROOT).parts)
 
 
-def missing_files(model_file):
-    """Files named in a model3.json that are absent on disk (e.g. archive extracted with the
-    wrong filename encoding). Returns [] when the model is complete."""
-    try:
-        refs = json.loads(model_file.read_text(encoding='utf-8-sig')).get('FileReferences', {})
-    except (OSError, ValueError):
-        return ['model3.json']
-    names = [refs.get('Moc'), refs.get('Physics')] + list(refs.get('Textures', []))
-    return [n for n in names if n and not (model_file.parent / n).is_file()]
 
 
-def list_models():
-    """Every complete Live2D model under assets/models, with its loose expression files."""
-    models = []
-    for model_file in sorted(MODELS.rglob('*.model3.json')):
-        folder = model_file.parent
-        if missing_files(model_file):
-            continue
-        top = model_file.relative_to(MODELS).parts[0]
-        expressions = [{'name': f.name[:-len('.exp3.json')], 'url': url_for(f)}
-                       for f in sorted(folder.rglob('*.exp3.json'))]
-        models.append({'id': top, 'name': '%s · %s' % (top, folder.name),
-                       'url': url_for(model_file), 'expressions': expressions, 'labels': parameter_labels(folder),
-                       'motions': [{'name': f.name[:-len('.motion3.json')], 'url': url_for(f)} for f in sorted(folder.rglob('*.motion3.json'))[:30]]})
-    return models
 
 
-def parameter_labels(folder):
-    """{parameter id: its display name} from the model's .cdi3.json: for expression files named 1, 2, 3 or Button7 this is what tells what the face is (blush, tears)."""
-    labels = {}
-    for path in sorted(folder.rglob('*.cdi3.json'))[:1]:
-        try:
-            for p in json.loads(path.read_text(encoding='utf-8-sig')).get('Parameters', []):
-                if isinstance(p, dict) and isinstance(p.get('Id'), str) and isinstance(p.get('Name'), str):
-                    labels[p['Id']] = p['Name'][:40]
-        except (OSError, ValueError):
-            pass
-    return labels
 
 
-MAX_MESSAGE, MAX_STORED = 12000, 3000   # a pasted file fits; the history keeps only the start of it
 
 
-def pull_code(buffer, final=False):
-    """Cut fenced code blocks out of the reply as it streams: ([('text', s) | ('code', {lang, text})], unfinished rest).
-    Code is shown in the chat but never spoken."""
-    segs = []
-    while True:
-        i = buffer.find('```')
-        if i < 0:
-            tail = len(buffer) - len(buffer.rstrip('`')) if not final else 0
-            segs.append(('text', buffer[:len(buffer) - tail]))
-            return segs, buffer[len(buffer) - tail:]
-        j = buffer.find('```', i + 3)
-        if j < 0 and not final:
-            segs.append(('text', buffer[:i]))
-            return segs, buffer[i:]
-        body = buffer[i + 3:j if j >= 0 else len(buffer)]
-        head, nl, rest = body.partition('\n')
-        lang, code = (head.strip().lower(), rest) if nl and re.fullmatch(r'[\w+#.-]{0,20}', head.strip()) else ('', body)
-        segs.append(('text', buffer[:i]))
-        if code.strip():
-            segs.append(('code', {'lang': lang, 'text': code.strip('\n')[:60000 if lang in ('lunadoc', 'lunaedit', 'lunaproject') else MAX_MESSAGE]}))
-        buffer = buffer[j + 3:] if j >= 0 else ''
 
 
 WORK_OFF = ("\n\nРабочий режим сейчас выключен: править код, запускать команды, создавать проекты и документы, читать его файлы ты сейчас не можешь. "
