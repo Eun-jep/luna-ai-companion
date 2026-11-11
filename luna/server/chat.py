@@ -387,6 +387,7 @@ def chat_turn(data):
             if seen_view.get('topic') and seen_view.get('view'):
                 character.set_opinion(seen_view['topic'], seen_view['view'], seen_view.get('like', 0))
         messages = [{'role': 'system', 'content': _app().system_prompt('' if initiative else text, thought)}] + HISTORY[-(20 if S.presence else 12):] + [sent]
+        spoken = [False]   # has the first sentence of this reply gone out yet (it may be cut early, at a comma)
         def feed(final=False):
             """Sentences and code blocks that the buffer holds so far, in order."""
             nonlocal buffer
@@ -400,6 +401,7 @@ def chat_turn(data):
                 for piece in ready + ([pending.strip()] if pending.strip() else []):
                     event = sentence(piece)
                     if event:
+                        spoken[0] = True
                         yield event
                 pending = ''
                 codes.append(val)
@@ -420,10 +422,11 @@ def chat_turn(data):
                         docs.append(val['text'])
                     continue
                 yield {'code': val}
-            ready, pending = split_ready(pending)
+            ready, pending = split_ready(pending, early=not spoken[0])
             for piece in ready + ([pending.strip()] if final and pending.strip() else []):
                 event = sentence(piece)
                 if event:
+                    spoken[0] = True
                     yield event
             buffer = ('' if final else pending) + held
 

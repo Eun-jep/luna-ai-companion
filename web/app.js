@@ -595,10 +595,23 @@ function interrupt() {
   stopSpeaking();
 }
 
+/* Her own voice coming back through the microphone: what was "heard" is part of what she is saying (or just said).
+   Without this, barge-in needed headphones. Letters only, case ignored; a short fragment (under 3 letters) is never decided on. */
+let lastSaid = {text: '', at: 0};
+const letters = s => s.toLowerCase().replace(/[^\p{L}\p{N}]+/gu, '');
+function isEcho(heard, now = Date.now()) {
+  const h = letters(heard);
+  if (h.length < 3 || !lastSaid.text || now - lastSaid.at > 6000) return false;
+  const said = letters(lastSaid.text);
+  return said.includes(h) || (h.length >= 8 && said.includes(h.slice(0, Math.floor(h.length * 0.8))));
+}
+window.isEcho = isEcho;
+
 /* Speak one sentence: voice if it could be synthesized, otherwise act it out silently. */
 async function playChunk(text, cues, audio, mine) {
   const url = await audio;
   if (mine.cancelled) { if (url) URL.revokeObjectURL(url); return; }
+  lastSaid = {text: lastSaid.text && Date.now() - lastSaid.at < 6000 ? lastSaid.text + ' ' + text : text, at: Date.now()};
   el.subtitle.textContent = text;
   el.subtitle.classList.add('show');
   setStatus('');
@@ -872,6 +885,9 @@ function startRecognition() {
     for (let i = e.resultIndex; i < e.results.length; i++) {
       if (e.results[i].isFinal) finalText += e.results[i][0].transcript; else interim += e.results[i][0].transcript;
     }
+    lastSaid.at = (el.subtitle.classList.contains('show') || busy) ? Date.now() : lastSaid.at;   // while she speaks, the echo window stays open
+    const echo = isEcho(finalText + interim);
+    if (echo) { finalText = ''; return; }   // her own voice, not you
     el.message.value = finalText + interim;
     if (busy && el.bargein.checked && (finalText + interim).trim().length >= 3) interrupt();   // you started talking: she stops
     reactToWords(finalText + interim);

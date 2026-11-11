@@ -32,6 +32,24 @@ def browser():
         b.close()
 
 
+def test_echo_of_her_own_voice_is_recognised(browser, url):
+    page = browser.new_page()
+    page.goto(url)
+    page.wait_for_function("typeof window.isEcho === 'function'")
+    r = page.evaluate("""() => {
+        const out = [];
+        out.push(isEcho('Я тебя слышу'));   // nothing was said yet
+        lastSaid = {text: 'Привет! Я тебя слышу, как дела?', at: Date.now()};
+        out.push(isEcho('я тебя слышу'));   // her own words coming back
+        out.push(isEcho('нет, подожди, я хотел другое'));   // a different phrase: you
+        out.push(isEcho('стоп'));   // too short to decide
+        out.push(isEcho('Я тебя слышу', Date.now() + 10000));   // long after she stopped
+        return out;
+    }""")
+    assert r == [False, True, False, False, False]
+    page.close()
+
+
 def test_page_loads_without_errors_and_answers(browser, url):
     page = browser.new_page()
     errors = []

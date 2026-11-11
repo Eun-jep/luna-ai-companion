@@ -57,8 +57,13 @@ BOUNDARY_RE = re.compile(r'[.!?…]+[»"\')\]]*(?=\s)|[。！？]+|\n+')   # end
 
 MIN_CHUNK = 12   # spoken characters: shorter pieces are joined to the next sentence
 
-def split_ready(buffer):
-    """Cut finished sentences off the front of the buffer -> (sentences, unfinished rest)."""
+CLAUSE_RE = re.compile(r'[,;:—–，、](?=\s)|[，、]')   # a pause inside a sentence
+EARLY_MIN = 28   # spoken characters before a clause may be spoken on its own
+
+def split_ready(buffer, early=False):
+    """Cut finished sentences off the front of the buffer -> (sentences, unfinished rest).
+    early=True (the very first piece of a reply): when the first sentence is still long and unfinished, it may be cut at a comma,
+    so the voice starts sooner. Only the first piece: later ones are cut at sentence ends, so the speech stays natural."""
     pieces, pos = [], 0
     for match in BOUNDARY_RE.finditer(buffer):
         piece = buffer[pos:match.end()]
@@ -67,6 +72,13 @@ def split_ready(buffer):
         if len(TAG_RE.sub('', ACT_RE.sub('', piece)).strip()) >= MIN_CHUNK:
             pieces.append(piece.strip())
             pos = match.end()
+    if early and not pieces:
+        for match in CLAUSE_RE.finditer(buffer):
+            piece = buffer[:match.end()]
+            if piece.count('[') > piece.count(']'):
+                continue
+            if len(TAG_RE.sub('', ACT_RE.sub('', piece)).strip()) >= EARLY_MIN:
+                return [piece.strip()], buffer[match.end():]
     return pieces, buffer[pos:]
 
 PLAN_MIN, PLAN_MAX, PLAN_STEP = 2, 6, 120
