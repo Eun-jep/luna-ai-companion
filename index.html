@@ -27,6 +27,8 @@
   </form>
 </div>
 
+<div id="wizard" role="dialog" aria-modal="true" hidden></div>
+
 <div id="cam" hidden><video id="cam-video" muted playsinline></video><span id="cam-dot" data-i18n-title="cam.on.dot" title="Camera on"></span></div>
 <button id="open-chat" data-i18n-title="chat.open" title="Open chat" hidden>💬</button>
 
@@ -77,6 +79,7 @@
         <label class="field" id="prov-model-row" hidden><span data-i18n="prov.model">Model</span><select id="prov-model"></select></label>
         <div id="prov-local"></div>
         <button type="button" id="prov-scan" class="wide" data-i18n="prov.scan">Look for local networks</button>
+        <button type="button" id="wizard-open" class="wide" data-i18n="wz.open">Setup guide</button>
       </section>
 
       <section class="group">
@@ -208,6 +211,7 @@
 <script src="/web/vision.js"></script>
 <script src="/web/app.js"></script>
 <script src="/web/provider.js"></script>
+<script src="/web/wizard.js"></script>
 <script src="/web/journal.js"></script>
 <script src="/web/nook.js"></script>
 <script src="/web/workspaces.js"></script>

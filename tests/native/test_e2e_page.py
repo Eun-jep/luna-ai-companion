@@ -50,12 +50,38 @@ def test_echo_of_her_own_voice_is_recognised(browser, url):
     page.close()
 
 
+def test_first_run_wizard_walks_through(browser, url):
+    page = browser.new_page()
+    errors = []
+    page.on('pageerror', lambda e: errors.append(str(e)))
+    page.goto(url)
+    page.wait_for_selector('#wizard:not([hidden]) #wz-card', timeout=15000)
+    page.get_by_role('button', name='Русский').click()   # the interface switches language at once
+    page.wait_for_function("document.querySelector('#wz-title').textContent.includes('Луна')")
+    page.get_by_role('button', name='Дальше').click()
+    page.wait_for_selector('.wz-grid button')
+    page.locator('.wz-grid button').first.click()   # choosing an online network asks for its key
+    assert page.locator('.wz-key').is_visible()
+    page.fill('.wz-key input', '')
+    page.click('.wz-key button[type=submit]')   # an empty key is refused and nothing is sent
+    assert page.locator('.wz-key .error').inner_text().strip()
+    page.get_by_role('button', name='Позже').click()
+    page.wait_for_selector('#wizard', state='hidden')
+    assert not errors, errors
+    page.close()
+
+
 def test_page_loads_without_errors_and_answers(browser, url):
     page = browser.new_page()
     errors = []
     page.on('pageerror', lambda e: errors.append(str(e)))
     page.goto(url)
     page.wait_for_selector('#message', state='attached')
+    page.wait_for_selector('#wizard:not([hidden]) button', timeout=15000)
+    page.click('#wz-card .row button')   # language step -> network step (the language is whatever the earlier test left)
+    page.click('#wz-card .row button')   # no key in the test: leave the wizard ("Later")
+    page.wait_for_selector('#wizard', state='hidden')
+    page.click('[data-tab=chat]')   # leaving the wizard without a network opens the settings
     page.evaluate("document.getElementById('open-chat') && (document.getElementById('open-chat').click())")
     page.fill('#message', 'привет')
     page.click('#send')

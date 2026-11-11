@@ -204,6 +204,7 @@ async function provInit() {
   prov.state = await provCall('state');
   provRender();
   if (provReady()) return;
+  if (window.wizardStart) { wizardStart(); return; }
   document.querySelector('[data-tab="settings"]')?.click();
   setStatus(t('prov.pick'), true);
   const found = prov.state.local.find(x => x.running && x.models && !x.dismissed);
