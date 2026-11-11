@@ -402,6 +402,7 @@ LISTEN_LOCK = threading.Lock()
 
 VENDOR = WEB / 'vendor'
 LIBS = {'__LIB_PIXI__': ('pixi.min.js', 'https://cdnjs.cloudflare.com/ajax/libs/pixi.js/6.5.10/browser/pixi.min.js'),
+        '__LIB_UNSAFEEVAL__': ('unsafe-eval.min.js', 'https://cdn.jsdelivr.net/npm/@pixi/unsafe-eval@6.5.10/dist/browser/unsafe-eval.min.js'),
         '__LIB_CUBISMCORE__': ('live2dcubismcore.min.js', 'https://cubism.live2d.com/sdk-web/cubismcore/live2dcubismcore.min.js'),
         '__LIB_CUBISM4__': ('cubism4.min.js', 'https://cdn.jsdelivr.net/npm/pixi-live2d-display@0.4.0/dist/cubism4.min.js')}
 
@@ -417,13 +418,13 @@ class Handler(HandsRoutes, BaseHTTPRequestHandler):
     def log_message(self, *args):
         pass  # Do not log messages or credentials.
 
-    def send(self, code, body, kind='application/json; charset=utf-8'):
+    def send(self, code, body, kind='application/json; charset=utf-8', nonce=None):
         if not isinstance(body, bytes):
             body = json.dumps(body, ensure_ascii=False).encode('utf-8')
         self.send_response(code)
         self.send_header('Content-Type', kind)
         self.send_header('Content-Length', str(len(body)))
-        for name, value in (security.page_headers() if kind.startswith('text/html') else security.HEADERS).items():
+        for name, value in (security.page_headers(nonce or security.new_nonce()) if kind.startswith('text/html') else security.HEADERS).items():
             self.send_header(name, value)
         self.end_headers()
         self.wfile.write(body)
@@ -451,12 +452,14 @@ class Handler(HandsRoutes, BaseHTTPRequestHandler):
         path = unquote(self.path.split('?', 1)[0])
         if path == '/':
             html = with_libs((ROOT / 'index.html').read_text(encoding='utf-8')).replace('__TOKEN__', TOKEN).replace('__MOOD__', json.dumps(mood_now())).replace('__STATE__', json.dumps(load_state()).replace('<', '\\u003c'))
-            return self.send(200, html.encode('utf-8'), 'text/html; charset=utf-8')
+            nonce = security.new_nonce()   # one per response: only the inline script we wrote may run
+            return self.send(200, html.replace('__NONCE__', nonce).encode('utf-8'), 'text/html; charset=utf-8', nonce)
         if path == '/api/models':
             return self.send(200, list_models())
         if path == '/growth':
             html = (WEB / 'growth.html').read_text(encoding='utf-8').replace('__TOKEN__', TOKEN).replace('__STATE__', json.dumps(load_state()).replace('<', '\\u003c'))
-            return self.send(200, html.encode('utf-8'), 'text/html; charset=utf-8')
+            nonce = security.new_nonce()   # one per response: only the inline script we wrote may run
+            return self.send(200, html.replace('__NONCE__', nonce).encode('utf-8'), 'text/html; charset=utf-8', nonce)
         if path == '/api/memory':   # personal data: only the page that received the token may read it
             if not security.token_ok(self.headers.get('X-App-Token'), TOKEN):
                 return self.send(403, {'error': 'Forbidden'})

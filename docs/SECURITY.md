@@ -11,7 +11,7 @@
 |---|---|
 | DNS rebinding / чужой Origin | `Handler.guard()`: `Host` должен быть `127.0.0.1\|localhost\|[::1]:порт`, `Origin` — только наш (`luna/security.py`), иначе 403 |
 | Подбор токена | токен сессии (`secrets.token_urlsafe(32)`), сравнение `hmac.compare_digest`; страница получает его только в `/` и `/growth` |
-| XSS, фреймы, утечка Referer | CSP (свои скрипты + CDN-запасные адреса, `object-src 'none'`, `frame-ancestors 'none'`), `X-Frame-Options`, `Referrer-Policy`, `nosniff`, CORP/COOP |
+| XSS, фреймы, утечка Referer | CSP без `unsafe-inline` и `unsafe-eval` (свои скрипты, единственный встроенный скрипт — с одноразовым `nonce` на каждый ответ; CDN-запасные адреса; `object-src 'none'`, `frame-ancestors 'none'`), `X-Frame-Options`, `Referrer-Policy`, `nosniff`, CORP/COOP |
 | Команды в чужом тексте | `security.neutralize()` для файлов, документов, diff и интернета (рамки `<<<`/```, поддельные теги ролей); `webRound=2` после любого такого чтения; действие — только по плашке и клику |
 | Ключи | `keys.dat` шифруется Windows DPAPI; страница видит только последние 4 символа; файл вне проекта и в `.gitignore` |
 | Личные данные | `%APPDATA%\Luna`, не в папке проекта; тесты всегда работают во временной папке |
@@ -21,7 +21,9 @@
 
 ## Известные ограничения
 
-- В CSP нужны `'unsafe-inline'` и `'unsafe-eval'` (Pixi, wasm MediaPipe); это ослабляет защиту от XSS на странице. Страница не показывает чужой HTML.
+- В CSP остался `'wasm-unsafe-eval'` (нужен MediaPipe и Live2D Core для WebAssembly); обычного `eval` и встроенных скриптов/стилей нет.
+  Pixi 6 работает без `eval` благодаря `web/vendor/unsafe-eval.min.js` (`@pixi/unsafe-eval`, MIT; закреплён по SHA-256). Если библиотеки нет в `web/vendor/`, страница берёт её с CDN.
+  Страница не показывает чужой HTML. Что-то, что вставляет в страницу Electron-оболочка (`executeJavaScript`, `insertCSS`), политика страницы не ограничивает — не проверялось.
 - Модель может ошибаться или быть обманута: поэтому безопасность опирается на плашки и токены, а не на «хорошее поведение» модели.
 - Озвучка `edge-tts` отправляет произносимый текст в сервис Microsoft; при локальной нейросети это единственное, что покидает компьютер.
 - Электрон-оболочка и трей в автоматических тестах не проверяются.

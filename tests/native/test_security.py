@@ -39,13 +39,15 @@ def test_token_comparison():
 
 
 def test_headers_block_framing_and_referrer():
-    h = security.page_headers()
+    h = security.page_headers('abc123')
     assert h['X-Frame-Options'] == 'DENY'
     assert h['Referrer-Policy'] == 'no-referrer'
     assert h['X-Content-Type-Options'] == 'nosniff'
     assert "frame-ancestors 'none'" in h['Content-Security-Policy']
     assert "object-src 'none'" in h['Content-Security-Policy']
     assert 'Content-Security-Policy' not in security.HEADERS
+    assert "'nonce-abc123'" in h['Content-Security-Policy']
+    assert 'unsafe-inline' not in h['Content-Security-Policy'] and 'unsafe-eval' not in h['Content-Security-Policy'].replace('wasm-unsafe-eval', '')
 
 
 def test_neutralize_breaks_frame_markers():

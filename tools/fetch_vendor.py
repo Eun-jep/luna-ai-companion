@@ -19,6 +19,7 @@ MP = 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14'
 # local name -> (source URL, SHA-256 or '' while not pinned yet)
 FILES = {
     'pixi.min.js': ('https://cdnjs.cloudflare.com/ajax/libs/pixi.js/6.5.10/browser/pixi.min.js', ''),
+    'unsafe-eval.min.js': ('https://cdn.jsdelivr.net/npm/@pixi/unsafe-eval@6.5.10/dist/browser/unsafe-eval.min.js', ''),   # lets Pixi 6 run without eval (the page's CSP has no 'unsafe-eval')
     'live2dcubismcore.min.js': ('https://cubism.live2d.com/sdk-web/cubismcore/live2dcubismcore.min.js', ''),
     'cubism4.min.js': ('https://cdn.jsdelivr.net/npm/pixi-live2d-display@0.4.0/dist/cubism4.min.js', ''),
     'mediapipe/vision_bundle.mjs': (MP + '/vision_bundle.mjs', ''),
@@ -32,6 +33,7 @@ FILES = {
 # Core the check says "wrong"; look at the new file, then run --pin and update this table on purpose.
 PINS = {
     'pixi.min.js': '403f2f2ee8145fa17f60c5c89403056efe2680e5096ec2762036486914ed19c5',
+    'unsafe-eval.min.js': '94bb4bfdbd015087772ee03bc4117e253c326e8ca73a61646bd331b22f6847ad',
     'live2dcubismcore.min.js': '25ae938cb4fe282ce189b357bcc97e603d1e1f7ec78bf04150d401c23cdc792f',
     'cubism4.min.js': 'af1267e6d52759b245766c578d905bfa025b532d5c3cc727c370957c4409e21b',
     'mediapipe/vision_bundle.mjs': 'e77f281f9619150d937023c355bae170e9120e3b9e43f1e23a2a7bee07197669',

@@ -50,6 +50,19 @@ def test_echo_of_her_own_voice_is_recognised(browser, url):
     page.close()
 
 
+def test_page_works_under_the_strict_csp(browser, url):
+    """No 'unsafe-inline' / 'unsafe-eval': the avatar must still be drawn, and the browser must report no policy violation."""
+    page = browser.new_page()
+    problems = []
+    page.on('pageerror', lambda e: problems.append(str(e)))
+    page.on('console', lambda m: problems.append(m.text) if m.type == 'error' and 'Content Security Policy' in m.text else None)
+    page.goto(url)
+    page.wait_for_selector('#stage canvas', timeout=30000)
+    page.wait_for_selector('#loading', state='hidden', timeout=30000)   # the model is loaded (no string evaluation here: the policy forbids it)
+    assert not problems, problems
+    page.close()
+
+
 def test_first_run_wizard_walks_through(browser, url):
     page = browser.new_page()
     errors = []

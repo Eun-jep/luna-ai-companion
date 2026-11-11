@@ -33,6 +33,19 @@ def call(srv, method, path, headers=None, body=None):
     return out
 
 
+def test_inline_script_runs_only_with_a_fresh_nonce(server):
+    import re
+    seen = []
+    for path in ('/', '/growth'):
+        status, hdr, body = call(server, 'GET', path)
+        csp = hdr['content-security-policy']
+        nonce = re.search(r"'nonce-([\w-]+)'", csp).group(1)
+        assert ('nonce="%s"' % nonce).encode() in body and b'__NONCE__' not in body
+        assert 'unsafe-inline' not in csp and "'unsafe-eval'" not in csp
+        seen.append(nonce)
+    assert len(set(seen)) == 2   # a new nonce for every response
+
+
 def test_own_page_is_served_with_headers(server):
     status, hdr, body = call(server, 'GET', '/')
     assert status == 200 and app.TOKEN.encode() in body

@@ -33,6 +33,7 @@ FILES = [('settings.json', 'настройки персонажа'), ('index.htm
          ('luna/senses/hearing.py', 'слух: что играет в динамиках'), ('luna/hands/studio.py', 'библиотека песен'), ('luna/hands/runner.py', 'запуск команд разработчика'), ('luna/hands/netsearch.py', 'интернет: поиск и чтение страниц'), ('luna/hands/docfiles.py', 'документы и папки'), ('luna/core/convo.py', 'умный собеседник'), ('luna/skills/stream.py', 'режим стримера'), ('luna/hands/projects.py', 'создание проектов'), ('web/stream.js', 'страница стримера'), ('web/workspaces.js', 'папки для проектов'),
          ('luna/paths.py', 'где лежат данные пользователя'), ('luna/security.py', 'защита локального сервера'), ('luna/core/memory_store.py', 'поиск воспоминаний по смыслу'), ('tools/fetch_vendor.py', 'загрузка библиотек для работы без интернета')]
 ONLINE = ['https://cdnjs.cloudflare.com/ajax/libs/pixi.js/6.5.10/browser/pixi.min.js',
+          'https://cdn.jsdelivr.net/npm/@pixi/unsafe-eval@6.5.10/dist/browser/unsafe-eval.min.js',
           'https://cubism.live2d.com/sdk-web/cubismcore/live2dcubismcore.min.js',
           'https://cdn.jsdelivr.net/npm/pixi-live2d-display@0.4.0/dist/cubism4.min.js']
 MIN_PYTHON = (3, 10)

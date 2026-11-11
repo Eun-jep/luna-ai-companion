@@ -9,6 +9,7 @@
 """
 import hmac
 import re
+import secrets
 
 LOOPBACK = ('127.0.0.1', 'localhost', '[::1]')
 
@@ -37,12 +38,22 @@ def token_ok(supplied, token):
     return hmac.compare_digest(supplied.encode('utf-8', 'replace'), token.encode('utf-8'))
 
 
-# Everything the page itself needs: its own scripts and styles, the CDN fallbacks it names, blobs and data: for audio, images and the avatar.
-CSP = ("default-src 'self'; "
-       "script-src 'self' 'unsafe-inline' 'unsafe-eval' blob: https://cdnjs.cloudflare.com https://cubism.live2d.com https://cdn.jsdelivr.net; "
-       "style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' blob: data:; "
-       "connect-src 'self' https://cdn.jsdelivr.net https://storage.googleapis.com data: blob:; worker-src 'self' blob:; "
-       "object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'")
+# Everything the page itself needs: its own scripts, the CDN fallbacks it names, blobs and data: for audio, images and the avatar.
+# No 'unsafe-inline': the one inline script of a page carries a fresh nonce for that response; styles are set from scripts (allowed) or style.css.
+_CSP = ("default-src 'self'; "
+        "script-src 'self' 'nonce-{nonce}' 'wasm-unsafe-eval' blob: https://cdnjs.cloudflare.com https://cubism.live2d.com https://cdn.jsdelivr.net; "
+        "style-src 'self'; img-src 'self' data: blob:; media-src 'self' blob: data:; "
+        "connect-src 'self' https://cdn.jsdelivr.net https://storage.googleapis.com data: blob:; worker-src 'self' blob:; "
+        "object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'")
+
+
+def new_nonce():
+    return secrets.token_urlsafe(16)
+
+
+def csp(nonce):
+    return _CSP.replace('{nonce}', nonce)
+
 
 HEADERS = {
     'Cache-Control': 'no-store',
@@ -55,9 +66,9 @@ HEADERS = {
 }
 
 
-def page_headers():
-    """Headers for the HTML pages (they also get the content-security policy)."""
-    return dict(HEADERS, **{'Content-Security-Policy': CSP})
+def page_headers(nonce):
+    """Headers for the HTML pages (they also get the content-security policy, with this response's nonce)."""
+    return dict(HEADERS, **{'Content-Security-Policy': csp(nonce)})
 
 
 # --- text from outside -------------------------------------------------------------------------------------------------------------------
