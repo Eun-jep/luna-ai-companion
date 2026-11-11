@@ -1311,7 +1311,7 @@ def chat_turn(data):
         for question in webs:   # read-only research: the page sends the excerpts back to her as data
             found = netsearch.research(question)
             if found:
-                yield {'web': {'query': question, 'text': ACT_RE.sub('', found).replace('```', "'''")[:6000], 'depth': depth + 1}}
+                yield {'web': {'query': question, 'text': security.neutralize(ACT_RE.sub('', found), 6000), 'depth': depth + 1}}
             else:
                 yield {'webfail': question}
         for expr in sums:
@@ -1690,6 +1690,7 @@ class Handler(BaseHTTPRequestHandler):
         """The creator agreed to show her one code file she asked for: send its text back to the page."""
         try:
             shown = devtools.read_code(self.read_json().get('token'))
+            shown['text'] = security.neutralize(shown.get('text'))   # a file may carry someone else's words: it can not close the frame it is shown in
             audit.log('read', shown.get('name', ''))
             self.send(200, shown)
         except PermissionError:
@@ -1741,6 +1742,7 @@ class Handler(BaseHTTPRequestHandler):
         """The creator agreed to the review of the changes: read-only git runs, the program analyses the diff, the report goes to the page."""
         try:
             shown = gitdiff.run(self.read_json().get('token'))
+            shown['text'] = security.neutralize(shown.get('text'))
             audit.log('diff', shown['name'])
             self.send(200, shown)
         except PermissionError:
@@ -1754,6 +1756,7 @@ class Handler(BaseHTTPRequestHandler):
         """The creator agreed to show her one of his documents (or the list of a folder): send its text back to the page."""
         try:
             shown = docfiles.read(self.read_json().get('token'))
+            shown['text'] = security.neutralize(shown.get('text'))
             audit.log('docread', shown['name'])
             self.send(200, shown)
         except PermissionError:

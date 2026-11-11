@@ -238,6 +238,7 @@ function askRead(c) {
 async function readFile(x) {
   try {
     const f = await (await api('/code/read', {token: x.token})).json();
+    webRound = 2;   // a code file may carry someone else's words (comments, strings): nothing she then proposes opens by itself
     converse(t('read.msg').replace('{x}', f.name) + (f.truncated ? ' ' + t('read.cut') : '') + '\n```\n' + f.text + '\n```', null, null, '', '📄 ' + f.name);
   } catch (e) { addMessage('note', t('read.err').replace('{x}', x.label)); }
 }
@@ -286,7 +287,8 @@ function askClip() {
     try {
       const text = ((await navigator.clipboard.readText()) || '').trim();
       if (!text) { addMessage('note', t('clip.empty')); return; }
-      converse(t('clip.msg') + '\n```\n' + text.slice(0, 8000) + '\n```', null, null, '', '📋 ' + t('clip.title'));
+      webRound = 2;   // the clipboard may hold text copied from anywhere: it is data, nothing she then proposes opens by itself
+      converse(t('clip.msg') + '\n```\n' + text.slice(0, 8000).replace(/`{3,}/g, "'''") + '\n```', null, null, '', '📋 ' + t('clip.title'));
     } catch (e) { addMessage('note', t('clip.err')); }
   }}]);
 }
@@ -297,6 +299,7 @@ function askScan(s) {
     try {
       const r = await (await api('/code/scan', {token: s.token})).json();
       if (r.error) throw new Error(r.error);
+      webRound = 2;   // the report quotes names and lines from the project's files
       converse(t('scan.msg').replace('{x}', r.name) + '\n```\n' + r.text + '\n```', null, null, '', '🔎 ' + r.name);
     } catch (e) { addMessage('note', t('scan.err')); }
   }}]);
@@ -319,6 +322,7 @@ function askDiff(d) {
     try {
       const r = await (await api('/git/diff', {token: d.token})).json();
       if (r.error) { addMessage('note', t('diff.err.' + r.error)); return; }
+      webRound = 2;   // a diff carries the code and commit messages of other people
       converse(t('diff.msg').replace('{x}', r.name) + '\n```diff\n' + r.text + '\n```', null, null, '', '🔀 ' + r.name);
     } catch (e) { addMessage('note', t('diff.err.failed')); }
   }}]);
