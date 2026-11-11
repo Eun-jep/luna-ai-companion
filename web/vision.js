@@ -4,6 +4,8 @@ const MP_VERSION = '0.10.14';
 const MP_BASE = 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@' + MP_VERSION;
 const MP_MODEL = 'https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task';
 
+const MP_SOURCES = [{base: '/web/vendor/mediapipe', model: '/web/vendor/mediapipe/face_landmarker.task'}, {base: MP_BASE, model: MP_MODEL}];
+
 class Vision {
   /* hooks: {onSmile(), onSurprise(), onReturn(), onLeave()} */
   constructor(avatar, video, hooks = {}) {
@@ -24,14 +26,20 @@ class Vision {
     this.stream = await navigator.mediaDevices.getUserMedia({video: {width: 320, height: 240, facingMode: 'user'}});
     this.video.srcObject = this.stream;
     await this.video.play();
-    try {
-      const mp = await import(MP_BASE + '/vision_bundle.mjs');
-      const files = await mp.FilesetResolver.forVisionTasks(MP_BASE + '/wasm');
-      this.landmarker = await mp.FaceLandmarker.createFromOptions(files, {
-        baseOptions: {modelAssetPath: MP_MODEL}, runningMode: 'VIDEO', numFaces: 1, outputFaceBlendshapes: true});
-    } catch (e) {
+    let failure = null;
+    for (const src of MP_SOURCES) {   // the copy on this computer first (tools/fetch_vendor.py), then the internet
+      try {
+        const mp = await import(src.base + '/vision_bundle.mjs');
+        const files = await mp.FilesetResolver.forVisionTasks(src.base + '/wasm');
+        this.landmarker = await mp.FaceLandmarker.createFromOptions(files, {
+          baseOptions: {modelAssetPath: src.model}, runningMode: 'VIDEO', numFaces: 1, outputFaceBlendshapes: true});
+        failure = null;
+        break;
+      } catch (e) { failure = e; }
+    }
+    if (failure) {
       this.stop();
-      throw Error(t('cam.model') + (e.message || e));
+      throw Error(t('cam.model') + (failure.message || failure));
     }
     this.active = true;
     this.seenAt = performance.now();

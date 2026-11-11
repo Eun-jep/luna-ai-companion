@@ -30,7 +30,8 @@ PROGRAMS = {
 FILES = [('settings.json', 'настройки персонажа'), ('index.html', 'страница'), ('app.py', 'сервер'), ('web/app.js', 'скрипты страницы'),
          ('web/chat-button.png', 'картинка свёрнутого чата'), ('desktop/main.js', 'окно Electron'), ('desktop/tray.png', 'значок в трее'),
          ('voice.py', 'интонация голоса'), ('media.py', 'что она видит на экране по названию окна'),
-         ('hearing.py', 'слух: что играет в динамиках'), ('studio.py', 'библиотека песен'), ('runner.py', 'запуск команд разработчика'), ('netsearch.py', 'интернет: поиск и чтение страниц'), ('docfiles.py', 'документы и папки'), ('convo.py', 'умный собеседник'), ('stream.py', 'режим стримера'), ('projects.py', 'создание проектов'), ('web/stream.js', 'страница стримера'), ('web/workspaces.js', 'папки для проектов')]
+         ('hearing.py', 'слух: что играет в динамиках'), ('studio.py', 'библиотека песен'), ('runner.py', 'запуск команд разработчика'), ('netsearch.py', 'интернет: поиск и чтение страниц'), ('docfiles.py', 'документы и папки'), ('convo.py', 'умный собеседник'), ('stream.py', 'режим стримера'), ('projects.py', 'создание проектов'), ('web/stream.js', 'страница стримера'), ('web/workspaces.js', 'папки для проектов'),
+         ('paths.py', 'где лежат данные пользователя'), ('security.py', 'защита локального сервера'), ('memory_store.py', 'поиск воспоминаний по смыслу'), ('tools/fetch_vendor.py', 'загрузка библиотек для работы без интернета')]
 ONLINE = ['https://cdnjs.cloudflare.com/ajax/libs/pixi.js/6.5.10/browser/pixi.min.js',
           'https://cubism.live2d.com/sdk-web/cubismcore/live2dcubismcore.min.js',
           'https://cdn.jsdelivr.net/npm/pixi-live2d-display@0.4.0/dist/cubism4.min.js']
@@ -148,6 +149,17 @@ def step_files():
     report(shutil.which('curl') is not None, 'curl.exe (запасной путь для чтения Википедии; есть в Windows 10 и новее)', False)
 
 
+def step_vendor():
+    say('\n[Библиотеки аватара для работы без интернета: web/vendor/]')
+    script = ROOT / 'tools' / 'fetch_vendor.py'
+    if not script.is_file():
+        report(False, 'tools/fetch_vendor.py не найден', False)
+        return
+    code = run([sys.executable, str(script)] + (['--check'] if CHECK_ONLY else []), quiet=True)
+    report(code == 0, 'библиотеки лежат в web/vendor/ (страница открывается без интернета)' if code == 0 else
+           'библиотеки не скачаны: страница возьмёт их из интернета (запусти tools/fetch_vendor.py позже)', False)
+
+
 def step_online():
     say('\n[Интернет: библиотеки аватара грузятся при открытии страницы]')
     for url in ONLINE:
@@ -184,6 +196,7 @@ def main():
     step_libraries()
     step_node()
     step_files()
+    step_vendor()
     step_online()
     step_ollama()
     bad = [t for ok, req, t in results if not ok and req]

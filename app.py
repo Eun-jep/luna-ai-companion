@@ -1343,6 +1343,19 @@ def end_task():
     control.end()
 
 
+VENDOR = WEB / 'vendor'
+LIBS = {'__LIB_PIXI__': ('pixi.min.js', 'https://cdnjs.cloudflare.com/ajax/libs/pixi.js/6.5.10/browser/pixi.min.js'),
+        '__LIB_CUBISMCORE__': ('live2dcubismcore.min.js', 'https://cubism.live2d.com/sdk-web/cubismcore/live2dcubismcore.min.js'),
+        '__LIB_CUBISM4__': ('cubism4.min.js', 'https://cdn.jsdelivr.net/npm/pixi-live2d-display@0.4.0/dist/cubism4.min.js')}
+
+
+def with_libs(html):
+    """The page uses its own copy of the third-party libraries when tools/fetch_vendor.py put them into web/vendor/ (works offline), else the CDN."""
+    for key, (name, cdn) in LIBS.items():
+        html = html.replace(key, '/web/vendor/' + name if (VENDOR / name).is_file() else cdn)
+    return html
+
+
 class Handler(BaseHTTPRequestHandler):
     def log_message(self, *args):
         pass  # Do not log messages or credentials.
@@ -1370,8 +1383,8 @@ class Handler(BaseHTTPRequestHandler):
         target = (base / relative).resolve()
         if base.resolve() not in target.parents or not target.is_file():
             return self.send(404, {'error': 'Not found'})
-        kind = mimetypes.guess_type(target.name)[0] or 'application/octet-stream'
-        if target.suffix in ('.js', '.json', '.html', '.css'):
+        kind = {'.mjs': 'text/javascript', '.wasm': 'application/wasm'}.get(target.suffix) or mimetypes.guess_type(target.name)[0] or 'application/octet-stream'
+        if target.suffix in ('.js', '.mjs', '.json', '.html', '.css'):
             kind += '; charset=utf-8'
         self.send(200, target.read_bytes(), kind)
 
@@ -1380,7 +1393,7 @@ class Handler(BaseHTTPRequestHandler):
             return
         path = unquote(self.path.split('?', 1)[0])
         if path == '/':
-            html = (ROOT / 'index.html').read_text(encoding='utf-8').replace('__TOKEN__', TOKEN).replace('__MOOD__', json.dumps(mood_now())).replace('__STATE__', json.dumps(load_state()).replace('<', '\\u003c'))
+            html = with_libs((ROOT / 'index.html').read_text(encoding='utf-8')).replace('__TOKEN__', TOKEN).replace('__MOOD__', json.dumps(mood_now())).replace('__STATE__', json.dumps(load_state()).replace('<', '\\u003c'))
             return self.send(200, html.encode('utf-8'), 'text/html; charset=utf-8')
         if path == '/api/models':
             return self.send(200, list_models())
