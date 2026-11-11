@@ -51,4 +51,4 @@ py -m venv .venv
 Хотите запустить сервер на пустых данных: `set LUNA_DATA_DIR=C:\temp\luna-dev`. Осторожно: при запуске `app.py` с `LUNA_DATA_DIR` старые файлы
 рядом с программой (если они ещё там) переносятся в эту папку.
 
-- Сквозной тест страницы (`tests/native/test_e2e_page.py`): настоящая страница в Edge через Playwright, подменена только модель. Пропускается, если нет Playwright/Edge.
+- Сквозной тест страницы (`tests/native/test_e2e_page.py`): настоящая страница в Edge через Playwright, подменена только модель. Пропускается, если нет Playwright/Edge. Файл закреплён за одним процессом xdist (`xdist_group`); ждать условий на странице через `wait_until`, а не `wait_for_function("строка")` (CSP запрещает eval).

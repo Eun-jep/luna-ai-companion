@@ -26,7 +26,7 @@ ignore = [
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 python_files = ["test_*.py"]
-addopts = "-ra -q"
+addopts = "-ra -q --dist loadgroup"
 markers = ["slow: runs the old script-style test files (one subprocess per file)"]
 
 [tool.mypy]
