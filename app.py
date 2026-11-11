@@ -201,6 +201,7 @@ def generate_stream(messages, model=None, vision=False, max_tokens=800):
 
 def refresh_summary(history):
     SUMMARY['text'] = convo.update_summary(generate, history, SUMMARY['text'])
+    character.note_episode(SUMMARY['text'])   # kept for later sessions (episodes.py)
     found = convo.find_bits(generate, history)
     tales = [re.sub(r'(?i)^байка\s*[:：-]?\s*', '', s) for s in found if re.match(r'(?i)байка', s)]
     if character.add_bits([s for s in found if not re.match(r'(?i)байка', s)]) + character.add_legend(tales):
@@ -480,7 +481,7 @@ class Handler(HandsRoutes, UpdateRoutes, BaseHTTPRequestHandler):
         if path == '/api/memory':   # personal data: only the page that received the token may read it
             if not security.token_ok(self.headers.get('X-App-Token'), TOKEN):
                 return self.send(403, {'error': 'Forbidden'})
-            keys = ('user', 'me', 'sessions', 'turns', 'born', 'last_seen', 'log', 'diary', 'wonder', 'interests')
+            keys = ('user', 'me', 'sessions', 'turns', 'born', 'last_seen', 'log', 'diary', 'wonder', 'interests', 'episodes')
             return self.send(200, dict({k: MEMORY[k] for k in keys}, name=CONFIG.get('name', 'Луна'),
                                        limit=MEMORY_LIMIT, mood=mood_now(), mood_text=describe_mood()))
         if path.startswith('/web/'):
@@ -494,7 +495,7 @@ class Handler(HandsRoutes, UpdateRoutes, BaseHTTPRequestHandler):
             return
         if not security.token_ok(self.headers.get('X-App-Token'), TOKEN):
             return self.send(403, {'error': 'Forbidden'})
-        if self.path not in ('/chat', '/reset', '/forget', '/tts', '/act', '/state', '/agent/start', '/agent/step', '/agent/do', '/agent/stop', '/unreal/run', '/godot/run', '/unity/run', '/code/read', '/code/scan', '/git/diff', '/sql/run', '/env/run', '/code/edit', '/project/make', '/project/ws', '/doc/read', '/doc/move', '/doc/make', '/care/due', '/reminder/due', '/hear', '/listen', '/run/go', '/run/again', '/stream/start', '/stream/stop', '/stream/say', '/stream/event', '/stream/status') and not self.path.startswith(('/provider/', '/journal/', '/studio/', '/nook/', '/update/')):
+        if self.path not in ('/chat', '/reset', '/forget', '/tts', '/act', '/state', '/agent/start', '/agent/step', '/agent/do', '/agent/stop', '/unreal/run', '/godot/run', '/unity/run', '/code/read', '/code/scan', '/git/diff', '/sql/run', '/env/run', '/code/edit', '/project/make', '/project/ws', '/doc/read', '/doc/move', '/doc/make', '/care/due', '/reminder/due', '/hear', '/listen', '/run/go', '/run/again', '/stream/start', '/stream/stop', '/stream/say', '/stream/event', '/stream/status', '/memory/forget') and not self.path.startswith(('/provider/', '/journal/', '/studio/', '/nook/', '/update/')):
             return self.send(404, {'error': 'Not found'})
         if self.path == '/tts':
             return self.handle_tts()
@@ -570,12 +571,15 @@ class Handler(HandsRoutes, UpdateRoutes, BaseHTTPRequestHandler):
                 HISTORY.clear()
                 save_memory()
                 return self.send(200, {'ok': True})
+            if self.path == '/memory/forget':   # one fact or one episode, on his word (the growth page)
+                body = self.read_json(2000)
+                return self.send(200, {'ok': character.forget_item(body.get('kind'), body.get('key'))})
             if self.path == '/forget':
                 standup.clear()
                 HISTORY.clear()
                 character.erase_backups()
                 MEMORY.update({'user': [], 'me': [], 'turns': 0, 'log': [], 'born': time.time(), 'milestone': 0, 'tutor': 0, 'diary': [],
-                               'wonder': '', 'reflected': 0, 'stats': {}, 'interests': [], 'people': [], 'moments': [], 'opinions': [], 'learned': [], 'lessons': [], 'reminders': [], 'bits': [], 'legend': [], 'style': {}, 'researched': 0, 'mood': {'v': MOOD_BASE['v'], 'e': MOOD_BASE['e'], 't': time.time()}})
+                               'wonder': '', 'reflected': 0, 'stats': {}, 'interests': [], 'people': [], 'moments': [], 'episodes': [], 'opinions': [], 'learned': [], 'lessons': [], 'reminders': [], 'bits': [], 'legend': [], 'style': {}, 'researched': 0, 'mood': {'v': MOOD_BASE['v'], 'e': MOOD_BASE['e'], 't': time.time()}})
                 save_memory()
                 return self.send(200, {'ok': True})
             events = chat_turn(self.read_json(MAX_IMAGE + 20000))

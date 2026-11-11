@@ -19,10 +19,28 @@ function text(tag, content, className) {
   return node;
 }
 
-function fillFacts(list, items, empty) {
+// he can delete one thing she remembers: a fact (kind user / me, key = its text) or a talk (kind episode, key = its start time)
+function forgetButton(kind, key) {
+  const b = text('button', '×', 'forget');
+  b.type = 'button';
+  b.title = t('gr.forget');
+  b.setAttribute('aria-label', t('gr.forget'));
+  b.addEventListener('click', async () => {
+    if (!confirm(t('gr.forget.confirm'))) return;
+    await fetch('/memory/forget', {method: 'POST', headers: {'Content-Type': 'application/json', 'X-App-Token': window.APP_TOKEN}, body: JSON.stringify({kind, key})}).catch(() => {});
+    load();
+  });
+  return b;
+}
+
+function fillFacts(list, items, empty, kind) {
   list.replaceChildren();
   if (!items.length) list.append(text('li', empty, 'empty'));
-  for (const s of items) list.append(text('li', s));
+  for (const s of items) {
+    const li = text('li', s);
+    li.prepend(forgetButton(kind, s));
+    list.append(li);
+  }
 }
 
 function render(m) {
@@ -38,8 +56,16 @@ function render(m) {
   }));
   $('#user-count').textContent = m.user.length + ' / ' + m.limit;
   $('#me-count').textContent = m.me.length + ' / ' + m.limit;
-  fillFacts($('#user'), m.user, t('gr.empty.user'));
-  fillFacts($('#me'), m.me, t('gr.empty.me'));
+  fillFacts($('#user'), m.user, t('gr.empty.user'), 'user');
+  fillFacts($('#me'), m.me, t('gr.empty.me'), 'me');
+  const episodes = $('#episodes');
+  episodes.replaceChildren();
+  if (!(m.episodes || []).length) episodes.append(text('li', t('gr.empty.episodes'), 'empty'));
+  for (const e of [...(m.episodes || [])].reverse()) {
+    const li = document.createElement('li');
+    li.append(forgetButton('episode', e.t), text('time', fmt(e.end)), text('div', e.text));
+    episodes.append(li);
+  }
 
   const v = m.mood.v, e = m.mood.e;   // same thresholds as the server's description
   const feeling = v > 0.5 ? 1 : v >= 0.15 ? 2 : v > -0.1 ? 3 : v > -0.4 ? 4 : 5, energy = e > 0.7 ? 1 : e < 0.3 ? 3 : 2;
@@ -79,7 +105,10 @@ function render(m) {
   }
 }
 
-fetch('/api/memory', {headers: {'X-App-Token': window.APP_TOKEN}})
-  .then(r => r.ok ? r.json() : Promise.reject())
-  .then(render)
-  .catch(() => { $('#intro').textContent = t('gr.fail'); });
+function load() {
+  return fetch('/api/memory', {headers: {'X-App-Token': window.APP_TOKEN}})
+    .then(r => r.ok ? r.json() : Promise.reject())
+    .then(render)
+    .catch(() => { $('#intro').textContent = t('gr.fail'); });
+}
+load();

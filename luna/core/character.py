@@ -35,7 +35,7 @@ MEMORY_EVERY = 3      # update the long-term memory after this many user message
 MEMORY_LOCK = threading.Lock()
 MEMORY = {'user': [], 'me': [], 'history': [], 'nook_read': 0, 'sessions': 0, 'turns': 0, 'last_seen': 0, 'born': 0, 'log': [],
           'mood': {'v': 0.2, 'e': 0.5, 't': 0}, 'diary': [], 'wonder': '', 'reflected': 0, 'stats': {}, 'interests': [], 'researched': 0,
-          'moments': [], 'people': [], 'opinions': [], 'learned': [], 'lessons': [], 'reminders': [], 'bits': [], 'legend': [], 'style': {}, 'late': 0, 'late_cared': 0, 'hurt': {'t': 0, 'text': ''}, 'sensed': {'t': 0, 'tone': ''}, 'mood_why': [], 'milestone': 0, 'bed': 0, 'bed_cared': 0, 'worry': {'t': 0, 'tone': ''}, 'tutor': 0}
+          'moments': [], 'people': [], 'opinions': [], 'learned': [], 'lessons': [], 'reminders': [], 'bits': [], 'legend': [], 'style': {}, 'late': 0, 'late_cared': 0, 'hurt': {'t': 0, 'text': ''}, 'sensed': {'t': 0, 'tone': ''}, 'mood_why': [], 'milestone': 0, 'bed': 0, 'bed_cared': 0, 'worry': {'t': 0, 'tone': ''}, 'tutor': 0, 'episodes': []}
 DIARY_LIMIT = 30
 INTEREST_LIMIT = 15   # things she has read up on and keeps
 INTEREST_GAP = 6 * 3600   # she looks into something new at most this often
@@ -263,6 +263,7 @@ def load_memory():
         worry = data.get('worry')
         if isinstance(worry, dict) and _num(worry.get('t')) and worry.get('tone') in ('sad', 'angry', 'sick'):
             MEMORY['worry'] = {'t': float(worry['t']), 'tone': worry['tone']}
+        MEMORY['episodes'] = episodes.clean(data.get('episodes'))
         if isinstance(data.get('wonder'), str):
             MEMORY['wonder'] = data['wonder'][:300]
         if isinstance(data.get('reflected'), int) and not isinstance(data.get('reflected'), bool):
@@ -587,6 +588,30 @@ def update_memory(recent):
         print('Memory update skipped (%s)' % type(exc).__name__)
 
 
+def note_episode(summary):
+    """The rolling summary of this session's talk is kept as its episode (episodes.py): it outlives the restart."""
+    if episodes.upsert(MEMORY['episodes'], MEMORY['sessions'], summary):
+        save_memory()
+
+
+def forget_item(kind, key):
+    """He deletes one thing she remembers: kind 'user' or 'me' (key = the fact's text) or 'episode' (key = its start time). -> True if it existed."""
+    with MEMORY_LOCK:
+        if kind in ('user', 'me') and isinstance(key, str) and key in MEMORY[kind]:
+            MEMORY[kind].remove(key)
+            MEMORY['stats'].pop(key, None)
+            MEMORY['log'].append({'t': time.time(), 'kind': kind, 'add': [], 'del': [key]})
+            del MEMORY['log'][:-LOG_LIMIT]
+            found = True
+        elif kind == 'episode' and isinstance(key, (int, float)) and not isinstance(key, bool):
+            found = episodes.forget(MEMORY['episodes'], float(key))
+        else:
+            found = False
+    if found:
+        save_memory()
+    return found
+
+
 def _bullets(items):
     return '\n'.join('- ' + s for s in items)
 
@@ -603,7 +628,7 @@ def memory_block(query=''):
     if MEMORY['sessions'] > 1:
         text += '\n\nЭто ваша встреча номер %d; вы не разговаривали около %s' % (MEMORY['sessions'], AWAY or 'какого-то времени')
         text += '. Можешь ненавязчиво это отметить, если уместно.'
-    text += people_block() + moments_block()
+    text += people_block() + moments_block() + episodes.block(MEMORY['episodes'], query, MEMORY['sessions'])
     if MEMORY['diary']:
         text += '\n\nТвои последние записи в личном дневнике (твои мысли после прошлых разговоров):\n' + _bullets(
             e['text'] for e in MEMORY['diary'][-3:])
@@ -822,7 +847,7 @@ def care_note(dated_only=False):
 
 # ---- a person, not a servant: her own opinion, hurt feelings, thanks, and reading the creator's tone ----
 HURT_FOR = 3 * 3600   # how long an offence is felt
-from luna.core import feeling, lexicon
+from luna.core import episodes, feeling, lexicon
 TONES = [(name, lexicon.rx('tone_' + name)) for name in lexicon.TONE_ORDER]   # checked in this order: the first that matches is the tone
 TONE_MOOD = {'rude': (-0.25, 0.05), 'sorry': (0.2, 0), 'thanks': (0.15, 0.05), 'sad': (-0.05, -0.05), 'angry': (-0.03, 0.03),
              'sick': (-0.04, -0.03), 'tired': (0, -0.03), 'happy': (0.08, 0.05)}

@@ -18,6 +18,8 @@ section { margin-top: 28px; }
 .facts, .timeline { list-style: none; margin: 0; padding: 0; }
 .facts li { background: var(--card); border-radius: 10px; padding: 10px 14px; margin-bottom: 8px; overflow-wrap: anywhere; }
 .empty { color: var(--muted); font-style: italic; }
+.forget { float: right; margin: 0 0 0 8px; padding: 0 8px; border: 0; border-radius: 6px; background: transparent; color: var(--muted); cursor: pointer; font-size: 1rem; }
+.forget:hover, .forget:focus-visible { color: var(--del); }
 .timeline li { border-left: 2px solid var(--accent); padding: 0 0 16px 16px; margin-left: 6px; position: relative; }
 .timeline li::before { content: ''; position: absolute; left: -6px; top: 6px; width: 10px; height: 10px; border-radius: 50%; background: var(--accent); }
 .timeline time { color: var(--muted); font-size: .85rem; }

@@ -15,7 +15,7 @@
 |---|---|---|
 | `luna/paths.py` | `DATA_DIR` (личные данные вне проекта), `ROOT`, `migrate()` | в тестах — всегда временная папка |
 | `luna/security.py` | Host/Origin, токен, CSP/заголовки, `neutralize()` | чистые функции, без зависимостей |
-| `luna/core/` | `character` (память, настроение, дневник), `memory_store` (поиск по смыслу), `providers`, `feeling` (тон по смыслу), `catalog` (подписи моделей), `updater` (обновление), `script` (сценарий ответа и чистые текстовые помощники), `models`, `voice`, `convo`, `lexicon`, `audit` | не знает о HTTP |
+| `luna/core/` | `character` (память, настроение, дневник), `memory_store` (поиск по смыслу), `providers`, `feeling` (тон по смыслу), `episodes` (память о разговорах), `catalog` (подписи моделей), `updater` (обновление), `script` (сценарий ответа и чистые текстовые помощники), `models`, `voice`, `convo`, `lexicon`, `audit` | не знает о HTTP |
 | `luna/skills/` | то, что считает программа, а не модель: `dates`, `exact`, `lists`, `habits`, `reminders`, `stream`… | у каждого навыка — разбор фразы на 4 языках и точный ответ |
 | `luna/senses/` | `hearing`, `localtts` (голос Windows), `media`, `songid` | только локальная обработка |
 | `luna/hands/` | `docfiles`, `codeedit`, `projects`, `runner`, `office`, `control`, `netsearch`… | всё, что меняет мир, — только после плашки и нажатия пользователя |
