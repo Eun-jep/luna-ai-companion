@@ -34,7 +34,7 @@ py -m venv .venv
 ## Как добавить навык
 
 1. Модуль в `luna/skills/` (разбор фразы на ru/en/ko/ja — слова держим в `luna/core/lexicon.py`; ответ считает код).
-2. Подключить в `chat_turn` (`app.py`) рядом с похожими навыками; текст «снаружи» — через `security.neutralize` и с `webRound`.
+2. Подключить в `chat_turn` (`luna/server/chat.py`) рядом с похожими навыками; текст «снаружи» — через `security.neutralize` и с `webRound`.
 3. Тест в `tests/native/` (pytest) — старый скриптовый формат только для поддержки существующих файлов.
 4. Строка в `docs/FEATURES.txt` и запись в `CHANGELOG.md`.
 

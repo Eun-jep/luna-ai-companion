@@ -5,6 +5,9 @@
 ### Структура
 - Плоские 60 модулей разложены по пакету `luna/` (`core`, `skills`, `senses`, `hands`, `dev`); установщик и очистка — в `tools/`.
 - Из `app.py` вынесены чистые помощники: `luna/core/script.py` (сценарий ответа, выбор голоса, нарезка на предложения и код, план) и `luna/core/models.py`.
+- Состояние хода — объект `Session` (`luna/core/session.py`); маршруты рук — `luna/server/hands.py`; движок чата — `luna/server/chat.py`;
+  сборка промпта и настройки — `luna/core/prompts.py`, `luna/core/config.py`. `app.py` сократился с ~1950 до ~800 строк.
+- CI (GitHub Actions, Windows): ruff, mypy, pytest. Ещё ни разу не запускался — удалённого репозитория нет.
 - Репозиторий git; `.gitignore` для ключей, памяти, моделей, `web/vendor/`.
 
 ### Данные
