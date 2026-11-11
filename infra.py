@@ -41,7 +41,7 @@ def _k8s(text):
         label = '%s %s: ' % (kind, name.group(1)) if name else kind + ': '
         lines = doc.split('\n')
 
-        def at(rx, sev, what, flags=0):
+        def at(rx, sev, what, flags=0, lines=lines, first=first, label=label):
             for j, l in enumerate(lines):
                 if re.search(rx, l, flags):
                     out.append((sev, first + j, label + what))

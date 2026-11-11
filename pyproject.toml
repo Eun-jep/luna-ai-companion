@@ -8,13 +8,15 @@ readme = "README.md"
 [tool.ruff]
 line-length = 200
 target-version = "py310"
-extend-exclude = [".venv", "assets", "models", "desktop", "web", "memory-backups"]
+extend-exclude = [".venv", "assets", "models", "desktop", "web", "memory-backups", "*.ipynb"]
 
 [tool.ruff.lint]
 # E/W: pycodestyle, F: pyflakes (real bugs: unused names, undefined names), B: bugbear (selected), S: security (selected)
 select = ["E", "W", "F", "B006", "B008", "B015", "B018", "B023", "B904", "S102", "S301", "S307", "S324", "S506", "S602", "S605"]
 ignore = [
     "E501",  # long lines: the code base writes whole sentences on one line
+    "E401", "E402",  # imports: one line with several modules; imports after sys.path set-up
+    "B904",  # raise ... from ...: the messages are what matters here
     "E701", "E702", "E731", "E741",  # one-line style that the code base uses on purpose
 ]
 

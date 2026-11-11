@@ -54,7 +54,6 @@ def kind(stmt):
 def check(stmt):
     """-> [(level, what)] with level 'опасно' or 'внимание'."""
     s = stmt
-    low = s.lower()
     out = []
     head = KEYWORDS.match(s).group(1).lower()
     has_where = bool(re.search(r'(?i)\bwhere\b', s))

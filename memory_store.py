@@ -28,7 +28,7 @@ LOCK = threading.RLock()
 
 _embedder = None      # (name, callable) or None
 _db_path = None       # where the vector cache lives (None = no cache, memory only)
-_mem_cache = {}       # (model, text) -> vector, bounded
+_mem_cache: dict = {}     # (model, text) -> vector, bounded
 _MEM_MAX = 2000
 
 # words that say nothing about the topic (they would make every sentence look alike)

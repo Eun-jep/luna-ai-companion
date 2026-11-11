@@ -41,7 +41,7 @@ async def main():
     global PITCH, RATE
     PITCH, RATE = '%+dHz' % pitch, '%+d%%' % rate
     OUT.mkdir(exist_ok=True)
-    budget, n = MAX_MINUTES * 60 * CHARS_PER_SECOND, 0
+    budget = MAX_MINUTES * 60 * CHARS_PER_SECOND
     chunk, size, batch = [], 0, 0
     for s in sentences():
         chunk.append(s)

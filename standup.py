@@ -3,7 +3,6 @@ Notes stay in standup.json next to the program; she writes one only after he has
 import paths
 import json
 import os
-import re
 import time
 
 FILE = str(paths.data_file('standup.json'))

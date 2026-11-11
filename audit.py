@@ -4,7 +4,6 @@ Undo exists where it is honest: a document she created goes to the Recycle Bin, 
 editor. Opening a site or a program, or working the mouse, cannot be taken back, so those entries have no Undo button."""
 import ctypes
 import json
-import os
 import threading
 import time
 from ctypes import wintypes

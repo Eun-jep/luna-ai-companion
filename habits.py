@@ -7,11 +7,8 @@ import paths
 import json
 import os
 import re
-import sys
-import tempfile
 import threading
 from datetime import date, timedelta
-from pathlib import Path
 
 MAX_HABITS = 10
 MAX_NAME = 40

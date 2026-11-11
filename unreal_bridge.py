@@ -216,7 +216,7 @@ def load_module():
         # Epic's UE 4.25 client passes json.loads(encoding=...), which Python 3.9+ removed: fixed in memory, the engine file stays as it is
         source = source.replace(", encoding='utf-8')", ')')
         mod = types.ModuleType('ue_remote_execution')
-        exec(compile(source, 'remote_execution.py', 'exec'), mod.__dict__)
+        exec(compile(source, 'remote_execution.py', 'exec'), mod.__dict__)   # noqa: S102 - Epic's own client file from the user's engine, loaded on purpose
         _module['m'] = mod
     return _module['m']
 

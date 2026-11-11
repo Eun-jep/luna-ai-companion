@@ -9,7 +9,6 @@ She can build things by hand only in Unreal, Unity and Godot; for every other en
 import json
 import os
 import re
-import time
 
 HANDS = ('unreal', 'unity', 'godot')
 

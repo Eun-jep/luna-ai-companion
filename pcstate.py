@@ -5,7 +5,6 @@ Only the Actions switch lets it run (it is his computer's data going to the mode
 import ctypes
 import os
 import re
-import time
 
 import envdiag
 

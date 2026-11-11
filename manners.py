@@ -7,10 +7,7 @@ import paths
 import json
 import os
 import re
-import sys
-import tempfile
 import threading
-from pathlib import Path
 
 
 def _file():

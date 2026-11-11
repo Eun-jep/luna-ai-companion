@@ -8,7 +8,6 @@ import json
 import re
 import secrets
 import time
-from pathlib import Path
 
 DIR = paths.data_file('songs')
 INDEX = DIR / 'library.json'

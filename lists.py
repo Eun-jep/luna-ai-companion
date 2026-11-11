@@ -6,10 +6,7 @@ import paths
 import json
 import os
 import re
-import sys
-import tempfile
 import threading
-from pathlib import Path
 
 MAX_ITEMS = 60         # in one list
 MAX_ADD = 8            # items in one request

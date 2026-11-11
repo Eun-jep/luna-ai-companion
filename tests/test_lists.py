@@ -54,7 +54,7 @@ lists.FILE.write_text('not json', encoding='utf-8')
 ok('a broken file is an empty list, not a crash', lists.load() == {'shop': [], 'todo': []})
 lists.FILE.write_text('{"shop": ["a", 5, null, "b"], "todo": "x"}', encoding='utf-8')
 ok('odd content is cleaned', lists.load() == {'shop': ['a', 'b'], 'todo': []})
-ok('the real file is never the test file', lists.Path(lists.__file__).resolve().parent / 'lists.json' != lists.FILE)
+ok('the real file is never the test file', pathlib.Path(lists.__file__).resolve().parent / 'lists.json' != lists.FILE)
 
 # the chat route adds the hint, and not after text from the internet
 import app
