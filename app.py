@@ -1,6 +1,7 @@
 """Local companion: Live2D avatar + chat + speech. Server needs only the Python stdlib
 for chat; speech synthesis uses the optional `edge-tts` package."""
 import paths
+import security
 import asyncio
 import itertools
 import json
@@ -1352,10 +1353,18 @@ class Handler(BaseHTTPRequestHandler):
         self.send_response(code)
         self.send_header('Content-Type', kind)
         self.send_header('Content-Length', str(len(body)))
-        self.send_header('Cache-Control', 'no-store')
-        self.send_header('X-Content-Type-Options', 'nosniff')
+        for name, value in (security.page_headers() if kind.startswith('text/html') else security.HEADERS).items():
+            self.send_header(name, value)
         self.end_headers()
         self.wfile.write(body)
+
+    def guard(self):
+        """Only our own page on our own address may talk to us (DNS rebinding and foreign web pages are refused). True when the request may go on."""
+        port = self.server.server_port
+        if not security.host_ok(self.headers.get('Host'), port) or not security.origin_ok(self.headers.get('Origin'), port):
+            self.send(403, {'error': 'Forbidden'})
+            return False
+        return True
 
     def serve_file(self, base, relative):
         target = (base / relative).resolve()
@@ -1367,6 +1376,8 @@ class Handler(BaseHTTPRequestHandler):
         self.send(200, target.read_bytes(), kind)
 
     def do_GET(self):
+        if not self.guard():
+            return
         path = unquote(self.path.split('?', 1)[0])
         if path == '/':
             html = (ROOT / 'index.html').read_text(encoding='utf-8').replace('__TOKEN__', TOKEN).replace('__MOOD__', json.dumps(mood_now())).replace('__STATE__', json.dumps(load_state()).replace('<', '\\u003c'))
@@ -1377,7 +1388,7 @@ class Handler(BaseHTTPRequestHandler):
             html = (WEB / 'growth.html').read_text(encoding='utf-8').replace('__TOKEN__', TOKEN).replace('__STATE__', json.dumps(load_state()).replace('<', '\\u003c'))
             return self.send(200, html.encode('utf-8'), 'text/html; charset=utf-8')
         if path == '/api/memory':   # personal data: only the page that received the token may read it
-            if self.headers.get('X-App-Token') != TOKEN:
+            if not security.token_ok(self.headers.get('X-App-Token'), TOKEN):
                 return self.send(403, {'error': 'Forbidden'})
             keys = ('user', 'me', 'sessions', 'turns', 'born', 'last_seen', 'log', 'diary', 'wonder', 'interests')
             return self.send(200, dict({k: MEMORY[k] for k in keys}, name=CONFIG.get('name', 'Луна'),
@@ -1389,7 +1400,9 @@ class Handler(BaseHTTPRequestHandler):
         self.send(404, {'error': 'Not found'})
 
     def do_POST(self):
-        if self.headers.get('X-App-Token') != TOKEN:
+        if not self.guard():
+            return
+        if not security.token_ok(self.headers.get('X-App-Token'), TOKEN):
             return self.send(403, {'error': 'Forbidden'})
         if self.path not in ('/chat', '/reset', '/forget', '/tts', '/act', '/state', '/agent/start', '/agent/step', '/agent/do', '/agent/stop', '/unreal/run', '/godot/run', '/unity/run', '/code/read', '/code/scan', '/git/diff', '/sql/run', '/env/run', '/code/edit', '/project/make', '/project/ws', '/doc/read', '/doc/move', '/doc/make', '/care/due', '/reminder/due', '/hear', '/listen', '/run/go', '/run/again', '/stream/start', '/stream/stop', '/stream/say', '/stream/event', '/stream/status') and not self.path.startswith(('/provider/', '/journal/', '/studio/', '/nook/')):
             return self.send(404, {'error': 'Not found'})
@@ -1477,8 +1490,8 @@ class Handler(BaseHTTPRequestHandler):
             first = next(events)   # API/validation errors surface here, before any byte is streamed
             self.send_response(200)
             self.send_header('Content-Type', 'application/x-ndjson; charset=utf-8')
-            self.send_header('Cache-Control', 'no-store')
-            self.send_header('X-Content-Type-Options', 'nosniff')
+            for name, value in security.HEADERS.items():
+                self.send_header(name, value)
             self.send_header('Connection', 'close')
             self.end_headers()
             self.close_connection = True
