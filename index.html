@@ -1,0 +1,217 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Luna</title>
+<link rel="stylesheet" href="/web/style.css">
+</head>
+<body data-bg="night">
+<div id="stage"><div id="loading" data-i18n="loading">Loading the model…</div></div>
+<div id="subtitle" aria-live="polite"></div>
+<div id="hud" hidden><span id="hud-text"></span><button id="hud-stop" data-i18n="task.stop">Stop</button></div>
+<div id="confirm" role="alertdialog" hidden></div>
+<div id="diffbox" role="dialog" aria-modal="true" aria-labelledby="diff-title" hidden>
+  <div id="diffform">
+    <h4 id="diff-title"></h4>
+    <p id="diff-stat" class="hint"></p>
+    <pre id="diff-text"></pre>
+    <div class="row"><button type="button" id="diff-apply" class="primary"></button><button type="button" id="diff-no"></button></div>
+  </div>
+</div>
+<div id="keybox" role="dialog" aria-modal="true" aria-labelledby="key-title" hidden>
+  <form id="keyform" autocomplete="off">
+    <h4 id="key-title"></h4>
+    <p class="hint" data-i18n="prov.key.hint"></p>
+    <input type="password" id="key-input" autocomplete="off" spellcheck="false" data-i18n-ph="prov.key.ph">
+    <a id="key-get" class="hint link" target="_blank" rel="noopener" data-i18n="prov.key.get"></a>
+    <p class="hint error" id="key-err" role="alert"></p>
+    <div class="row"><button type="submit" class="primary" id="key-ok" data-i18n="prov.key.ok"></button><button type="button" id="key-cancel" data-i18n="prov.key.cancel"></button></div>
+  </form>
+</div>
+
+<div id="cam" hidden><video id="cam-video" muted playsinline></video><span id="cam-dot" data-i18n-title="cam.on.dot" title="Camera on"></span></div>
+<button id="open-chat" data-i18n-title="chat.open" title="Open chat" hidden>💬</button>
+
+<section id="panel" aria-label="Chat">
+  <header id="panel-head">
+    <strong data-i18n="name">Luna</strong>
+    <span class="spacer"></span>
+    <button id="min" data-i18n-title="panel.min" title="Minimize">—</button>
+    <button id="close" data-i18n-title="panel.close" title="Close">✕</button>
+  </header>
+  <div id="panel-body">
+    <nav id="tabs">
+      <button data-tab="chat" class="active" data-i18n="tab.chat">💬 Chat</button>
+      <button data-tab="settings" data-i18n="tab.settings">⚙ Settings</button>
+    </nav>
+
+    <div id="tab-chat" class="tab">
+      <div id="log" aria-live="polite"></div>
+      <p id="status" role="status"></p>
+      <form id="form">
+        <textarea id="message" rows="2" maxlength="12000" data-i18n-ph="chat.placeholder" placeholder="Type, or press 🎤 and speak…"></textarea>
+        <div class="row">
+          <button type="button" id="plan-stop" data-i18n="plan.stop" hidden>Stop plan</button>
+          <button type="button" id="mic" data-i18n-title="chat.mic" title="Speak" aria-pressed="false">🎤</button>
+          <button class="primary" id="send" data-i18n="chat.send">Send</button>
+        </div>
+      </form>
+    </div>
+
+    <div id="tab-settings" class="tab" hidden>
+      <section class="group">
+        <h3 data-i18n="g.language">Language</h3>
+        <label class="field"><span data-i18n="lang.ui">App language</span>
+          <select id="uilang"><option value="en">English</option><option value="ru">Русский</option><option value="ko">한국어</option><option value="ja">日本語</option></select>
+        </label>
+        <p class="hint" data-i18n="lang.hint"></p>
+      </section>
+
+      <section class="group" id="prov-group">
+        <h3 data-i18n="g.brain">Neural network</h3>
+        <label class="field"><span data-i18n="prov.use">Which network Luna thinks with</span><select id="prov"></select></label>
+        <p id="prov-status" class="hint" role="status"></p>
+        <div class="row" id="prov-keys" hidden>
+          <button type="button" id="prov-key" data-i18n="prov.change">Change key</button>
+          <button type="button" id="prov-del" class="danger" data-i18n="prov.remove">Remove key</button>
+        </div>
+        <a id="prov-get" class="hint link" target="_blank" rel="noopener" hidden data-i18n="prov.key.get">Where to get a key</a>
+        <label class="field" id="prov-model-row" hidden><span data-i18n="prov.model">Model</span><select id="prov-model"></select></label>
+        <div id="prov-local"></div>
+        <button type="button" id="prov-scan" class="wide" data-i18n="prov.scan">Look for local networks</button>
+      </section>
+
+      <section class="group">
+        <h3 data-i18n="g.character">Character</h3>
+        <label class="field"><span data-i18n="model">Model</span><select id="model"></select></label>
+        <label class="field"><span data-i18n="zoom">Size</span><input type="range" id="zoom" min="1" max="6" step="0.1" value="1.8"></label>
+        <label class="field" id="bg-row"><span data-i18n="bg">Background</span>
+          <select id="bg"><option value="night" data-i18n="bg.night">Night</option><option value="day" data-i18n="bg.day">Day</option><option value="green" data-i18n="bg.green">Green</option></select>
+        </label>
+        <label class="switch" id="drag-row" hidden><input type="checkbox" id="drag" checked><span class="txt"><b data-i18n="drag"></b><small data-i18n="drag.d"></small></span></label>
+      </section>
+
+      <section class="group">
+        <h3 data-i18n="g.talk">Conversation</h3>
+        <label class="switch"><input type="checkbox" id="initiative" checked><span class="txt"><b data-i18n="initiative"></b><small data-i18n="initiative.d"></small></span></label>
+        <label class="switch"><input type="checkbox" id="presence"><span class="txt"><b data-i18n="presence"></b><small data-i18n="presence.d"></small></span></label>
+      </section>
+
+      <section class="group" id="stream-group">
+        <h3 data-i18n="g.stream">Streamer mode</h3>
+        <p class="hint" data-i18n="stream.hint"></p>
+        <label class="field"><span data-i18n="stream.channel">Twitch channel (optional)</span><input type="text" class="txt-in" id="stream-channel" maxlength="25" autocomplete="off" spellcheck="false" placeholder="twitch_name"></label>
+        <button type="button" id="stream-toggle" class="wide" data-i18n="stream.start">Start the stream</button>
+        <p id="stream-status" class="hint" role="status"></p>
+        <div id="stream-tools" hidden>
+          <label class="field"><span data-i18n="stream.nick">Viewer name</span><input type="text" class="txt-in" id="stream-user" maxlength="25" autocomplete="off"></label>
+          <label class="field"><span data-i18n="stream.text">Chat message (or the amount)</span><input type="text" class="txt-in" id="stream-text" maxlength="220" autocomplete="off"></label>
+          <div class="row"><button type="button" id="stream-say" data-i18n="stream.say">Send to chat</button></div>
+          <div class="row">
+            <button type="button" data-stream-event="follow" data-i18n="stream.follow">Follow</button>
+            <button type="button" data-stream-event="sub" data-i18n="stream.sub">Sub</button>
+            <button type="button" data-stream-event="donate" data-i18n="stream.donate">Donate</button>
+            <button type="button" data-stream-event="raid" data-i18n="stream.raid">Raid</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="group">
+        <h3 data-i18n="g.agent">Actions</h3>
+        <label class="switch"><input type="checkbox" id="agent" checked><span class="txt"><b data-i18n="agent"></b><small data-i18n="agent.d"></small></span></label>
+        <label class="switch" id="control-row" hidden><input type="checkbox" id="control"><span class="txt"><b data-i18n="control"></b><small data-i18n="control.d"></small></span></label>
+        <label class="switch"><input type="checkbox" id="work"><span class="txt"><b data-i18n="work"></b><small data-i18n="work.d"></small></span></label>
+      </section>
+
+      <section class="group">
+        <h3 data-i18n="g.vision">Vision</h3>
+        <label class="switch"><input type="checkbox" id="camera"><span class="txt"><b data-i18n="camera"></b><small data-i18n="camera.d"></small></span></label>
+        <p id="camera-note" class="hint" role="status"></p>
+        <label class="switch" id="eye-row" hidden><input type="checkbox" id="eye"><span class="txt"><b data-i18n="eye"></b><small data-i18n="eye.d"></small></span></label>
+        <label class="switch" id="media-row" hidden><input type="checkbox" id="media"><span class="txt"><b data-i18n="media"></b><small data-i18n="media.d"></small></span></label>
+        <label class="switch" id="hear-row" hidden><input type="checkbox" id="hear"><span class="txt"><b data-i18n="hear"></b><small data-i18n="hear.d"></small></span></label>
+        <label class="switch" id="hearkeep-row" hidden><input type="checkbox" id="hearkeep"><span class="txt"><b data-i18n="hearkeep"></b><small data-i18n="hearkeep.d"></small></span></label>
+        <label class="switch" id="songid-row" hidden><input type="checkbox" id="songid"><span class="txt"><b data-i18n="songid"></b><small data-i18n="songid.d"></small></span></label>
+        <label class="switch"><input type="checkbox" id="follow"><span class="txt"><b data-i18n="follow"></b><small data-i18n="follow.d"></small></span></label>
+      </section>
+
+      <section class="group">
+        <h3 data-i18n="g.voice">Voice</h3>
+        <label class="switch"><input type="checkbox" id="speak" checked><span class="txt"><b data-i18n="speak"></b></span></label>
+        <label class="field"><span data-i18n="volume">Volume</span><input type="range" id="volume" min="0" max="1" step="0.05" value="1"></label>
+        <label class="field"><span class="line"><span data-i18n="pitch">Pitch</span><span><output id="pitch-val">0</output> <span data-i18n="hz">Hz</span></span></span><input type="range" id="pitch" min="-50" max="100" step="5" value="0"></label>
+        <label class="field"><span class="line"><span data-i18n="rate">Speed</span><span><output id="rate-val">0</output> %</span></span><input type="range" id="rate" min="-50" max="50" step="5" value="0"></label>
+        <label class="switch"><input type="checkbox" id="voicenative"><span class="txt"><b data-i18n="voicenative"></b><small data-i18n="voicenative.d"></small></span></label>
+        <button type="button" id="voice-test" class="wide" data-i18n="voice.test">Test</button>
+      </section>
+
+      <section class="group">
+        <h3 data-i18n="g.mic">Microphone</h3>
+        <label class="field"><span data-i18n="lang.speech">Speech recognition language</span>
+          <select id="lang"><option value="en-US">English</option><option value="ru-RU">Русский</option><option value="ko-KR">한국어</option><option value="ja-JP">日本語</option></select>
+        </label>
+        <label class="switch"><input type="checkbox" id="handsfree"><span class="txt"><b data-i18n="handsfree"></b><small data-i18n="handsfree.d"></small></span></label>
+        <label class="switch"><input type="checkbox" id="bargein"><span class="txt"><b data-i18n="bargein"></b><small data-i18n="bargein.d"></small></span></label>
+        <p class="hint" data-i18n="mic.hint"></p>
+        <button type="button" id="mic-test" class="wide" data-i18n="mic.test"></button>
+        <div id="mic-meter" class="meter" hidden><i></i></div>
+        <p id="mic-verdict" class="hint" hidden></p>
+      </section>
+
+      <section class="group">
+        <h3 data-i18n="g.memory">Memory</h3>
+        <button type="button" id="reset" class="wide" data-i18n="reset"></button>
+        <a class="button wide" id="growth" href="/growth" target="_blank" rel="noopener" data-i18n="growth"></a>
+        <button type="button" id="forget" class="wide danger" data-i18n="forget"></button>
+      </section>
+
+      <section class="group">
+        <h3 data-i18n="g.songs">Songs</h3>
+        <p class="hint" data-i18n="songs.hint"></p>
+        <button type="button" id="songs-add" class="wide" data-i18n="songs.add"></button>
+        <input type="file" id="songs-file" accept="audio/*,.mp3,.wav,.ogg,.flac,.m4a" multiple hidden>
+        <p class="hint" data-i18n="songs.herhint"></p>
+        <button type="button" id="songs-add-her" class="wide" data-i18n="songs.addher"></button>
+        <input type="file" id="songs-file-her" accept="audio/*,.mp3,.wav,.ogg,.flac,.m4a" multiple hidden>
+        <div id="songs"></div>
+      </section>
+
+      <section class="group">
+        <h3 data-i18n="g.ws">Project folders</h3>
+        <p class="hint" data-i18n="ws.hint"></p>
+        <div id="ws-list"></div>
+        <input type="text" id="ws-path" autocomplete="off" spellcheck="false" data-i18n-ph="ws.ph">
+        <button type="button" id="ws-add" class="wide" data-i18n="ws.add"></button>
+      </section>
+
+      <section class="group">
+        <h3 data-i18n="g.nook">Her corner</h3>
+        <p class="hint" data-i18n="nook.hint"></p>
+        <button type="button" id="nook-show" class="wide" data-i18n="nook.show"></button>
+        <div id="nook-box" hidden></div>
+      </section>
+
+      <section class="group">
+        <h3 data-i18n="g.journal">Journal</h3>
+        <p class="hint" data-i18n="journal.hint"></p>
+        <button type="button" id="journal-show" class="wide" data-i18n="journal.show"></button>
+        <div id="journal" hidden></div>
+      </section>
+    </div>
+  </div>
+</section>
+
+<script>window.APP_TOKEN='__TOKEN__'; window.APP_MOOD=__MOOD__; window.APP_STATE=__STATE__;</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pixi.js/6.5.10/browser/pixi.min.js"></script>
+<script src="https://cubism.live2d.com/sdk-web/cubismcore/live2dcubismcore.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/pixi-live2d-display@0.4.0/dist/cubism4.min.js"></script>
+<script src="/web/i18n.js"></script>
+<script src="/web/avatar.js"></script>
+<script src="/web/vision.js"></script>
+<script src="/web/app.js"></script>
+<script src="/web/provider.js"></script>
+<script src="/web/journal.js"></script>
+<script src="/web/nook.js"></script>
+<script src="/web/workspaces.js"></script>
+<script src="/web/studio.js"></script>
+<script src="/web/stream.js"></script>
+<script src="/web/folds.js"></script>
+</body></html>

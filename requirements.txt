@@ -1,0 +1,10 @@
+edge-tts
+python-docx
+python-pptx
+openpyxl
+soundcard
+vosk
+pypdf
+sounddevice
+sherpa-onnx
+shazamio

@@ -1,0 +1,35 @@
+# --- секреты и личные данные Луны (никогда не публиковать) ---
+.env
+*.key
+keys.dat
+providers.json
+memory.json
+memory-backups/
+journal.jsonl
+ui-state.json
+actions.json
+edit_backups/
+*.luna.tmp
+*.tmp
+*.db
+*.sqlite
+
+# --- чужие модели и большие бинарные данные ---
+assets/
+models/
+studio/reference/
+studio/reference_svetlana/
+
+# --- окружение и кэши ---
+__pycache__/
+*.pyc
+.venv/
+venv/
+.ruff_cache/
+.mypy_cache/
+.pytest_cache/
+.coverage
+htmlcov/
+desktop/node_modules/
+node_modules/
+Companion_backup_*/

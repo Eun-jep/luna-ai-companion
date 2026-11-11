@@ -1,0 +1,9 @@
+{
+  "name": "luna-desktop",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Transparent desktop window for the Luna companion",
+  "main": "main.js",
+  "scripts": {"start": "electron ."},
+  "devDependencies": {"electron": "^33.0.0"}
+}

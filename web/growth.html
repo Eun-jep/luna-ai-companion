@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Luna</title>
+<link rel="stylesheet" href="/web/growth.css">
+</head>
+<body>
+<main>
+  <header>
+    <h1><span id="name">Luna</span> · <span data-i18n="gr.heading">growth page</span></h1>
+    <p id="intro" data-i18n="gr.loading">Loading…</p>
+  </header>
+
+  <section class="stats" id="stats"></section>
+
+  <section>
+    <h2><span data-i18n="gr.mood">Mood right now:</span> <small id="mood-text"></small></h2>
+    <div class="meter"><span data-i18n="gr.joy">Joy</span><div class="bar"><i id="mood-v"></i></div></div>
+    <div class="meter"><span data-i18n="gr.energy">Energy</span><div class="bar"><i id="mood-e"></i></div></div>
+  </section>
+
+  <section>
+    <h2><span data-i18n="gr.diary">Diary</span> <small data-i18n="gr.diary.s"></small></h2>
+    <p id="wonder" class="wonder" hidden></p>
+    <ol id="diary" class="timeline"></ol>
+  </section>
+
+  <section>
+    <h2><span data-i18n="gr.interests">Interests</span> <small data-i18n="gr.interests.s"></small></h2>
+    <ol id="interests" class="timeline"></ol>
+  </section>
+
+  <div class="cols">
+    <section>
+      <h2><span data-i18n="gr.user"></span> <small id="user-count"></small></h2>
+      <ul id="user" class="facts"></ul>
+    </section>
+    <section>
+      <h2><span data-i18n="gr.me"></span> <small id="me-count"></small></h2>
+      <ul id="me" class="facts"></ul>
+    </section>
+  </div>
+
+  <section>
+    <h2 data-i18n="gr.changes"></h2>
+    <ol id="log" class="timeline"></ol>
+  </section>
+
+  <p class="hint" data-i18n="gr.hint"></p>
+</main>
+<script>window.APP_TOKEN='__TOKEN__'; window.APP_STATE=__STATE__;</script>
+<script src="/web/i18n.js"></script>
+<script src="/web/i18n-growth.js"></script>
+<script src="/web/growth.js"></script>
+</body></html>
