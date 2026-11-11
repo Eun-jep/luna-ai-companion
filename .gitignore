@@ -33,3 +33,6 @@ htmlcov/
 desktop/node_modules/
 node_modules/
 Companion_backup_*/
+
+# --- скачивается tools/fetch_vendor.py (лицензии сторонних библиотек) ---
+web/vendor/

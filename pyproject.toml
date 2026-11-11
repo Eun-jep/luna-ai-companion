@@ -1,0 +1,39 @@
+[project]
+name = "luna-companion"
+version = "0.9.0"
+description = "Luna: a local companion with a Live2D avatar driven by a neural network"
+requires-python = ">=3.10"
+readme = "README.md"
+
+[tool.ruff]
+line-length = 200
+target-version = "py310"
+extend-exclude = [".venv", "assets", "models", "desktop", "web", "memory-backups"]
+
+[tool.ruff.lint]
+# E/W: pycodestyle, F: pyflakes (real bugs: unused names, undefined names), B: bugbear (selected), S: security (selected)
+select = ["E", "W", "F", "B006", "B008", "B015", "B018", "B023", "B904", "S102", "S301", "S307", "S324", "S506", "S602", "S605"]
+ignore = [
+    "E501",  # long lines: the code base writes whole sentences on one line
+    "E701", "E702", "E731", "E741",  # one-line style that the code base uses on purpose
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["E402", "F401", "F811", "B", "S"]   # test scripts import after sys.path tweaks and build fake modules on purpose
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+addopts = "-ra -q"
+markers = ["slow: runs the old script-style test files (one subprocess per file)"]
+
+[tool.mypy]
+python_version = "3.10"
+ignore_missing_imports = true
+warn_unused_ignores = true
+check_untyped_defs = false
+files = ["paths.py", "security.py", "memory_store.py"]
+
+[tool.coverage.run]
+source = ["."]
+omit = [".venv/*", "tests/*", "desktop/*", "web/*", "tools/*"]
