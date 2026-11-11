@@ -3,8 +3,8 @@ backups, project and engine choice. No real Godot: a fake runner stands in for t
 import os
 import sys, tempfile, pathlib, json, re
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-import godot_bridge as G
-import devtools
+from luna.dev import godot_bridge as G
+from luna.dev import devtools
 ok = lambda n, c: print(('PASS ' if c else 'FAIL ') + n)
 
 def bad(text):

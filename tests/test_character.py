@@ -1,7 +1,7 @@
 import os
 import sys, tempfile, pathlib, json, time
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-import character as C
+from luna.core import character as C
 ok = lambda n, c: print(('PASS ' if c else 'FAIL ') + n)
 ok('standalone: the character does not pull in the web app, voice, providers or computer control',
    not any(m in sys.modules for m in ('app', 'providers', 'agent', 'control', 'unreal_bridge', 'audit', 'office', 'edge_tts')))

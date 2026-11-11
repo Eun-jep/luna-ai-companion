@@ -2,7 +2,8 @@
 import os
 import sys, tempfile, pathlib, json, threading, urllib.request
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-import app, character, urllib.error
+import app, urllib.error
+from luna.core import character
 ok = lambda n, c: print(('PASS ' if c else 'FAIL ') + n)
 character.MEMORY_FILE = pathlib.Path(tempfile.mkdtemp()) / 'memory.json'; app.load_memory()
 
@@ -13,9 +14,9 @@ def fake(m, model=None, vision=False, max_tokens=800, **kw):
 app.generate_stream = fake
 app.generate = lambda m: 'нет'
 from http.server import ThreadingHTTPServer
-srv = ThreadingHTTPServer(('127.0.0.1', 8806), app.Handler); threading.Thread(target=srv.serve_forever, daemon=True).start()
+srv = ThreadingHTTPServer(('127.0.0.1', 8915), app.Handler); threading.Thread(target=srv.serve_forever, daemon=True).start()
 def chat(**kw):
-    r = urllib.request.Request('http://127.0.0.1:8806/chat', json.dumps(dict({'message': 'посмотри мой код в Unity и сделай документ'}, **kw)).encode(),
+    r = urllib.request.Request('http://127.0.0.1:8915/chat', json.dumps(dict({'message': 'посмотри мой код в Unity и сделай документ'}, **kw)).encode(),
                                {'Content-Type': 'application/json', 'X-App-Token': app.TOKEN})
     with urllib.request.urlopen(r) as x:
         return [json.loads(l) for l in x.read().decode().splitlines() if l.strip()]
@@ -38,7 +39,7 @@ ev = chat(work=True)
 ok('work needs hands (agent) on', '[run:' not in seen['prompt'])
 
 # ---- Godot through the chat ----
-import godot_bridge, devtools
+from luna.dev import godot_bridge, devtools
 gtmp = pathlib.Path(tempfile.mkdtemp()) / 'g'; (gtmp / 'scripts').mkdir(parents=True)
 (gtmp / 'project.godot').write_text('config/name="Demo"\nconfig/features=PackedStringArray("4.2")\n', encoding='utf-8')
 (gtmp / 'scripts' / 'a.gd').write_text('extends Node\n', encoding='utf-8')
@@ -53,7 +54,7 @@ plates = [e['godot'] for e in ev if 'godot' in e]
 ok('on: a Godot request becomes a plate', len(plates) == 1 and plates[0]['project'] == 'Demo' and 'new scene Main' in plates[0]['text'])
 ok('on: the prompt teaches [gd:', '[gd:операция]' in seen['prompt'])
 def post(path, d):
-    r = urllib.request.Request('http://127.0.0.1:8806' + path, json.dumps(d).encode(), {'Content-Type': 'application/json', 'X-App-Token': app.TOKEN})
+    r = urllib.request.Request('http://127.0.0.1:8915' + path, json.dumps(d).encode(), {'Content-Type': 'application/json', 'X-App-Token': app.TOKEN})
     try:
         with urllib.request.urlopen(r) as x: return x.status, json.loads(x.read())
     except urllib.error.HTTPError as e: return e.code, json.loads(e.read())
@@ -68,7 +69,7 @@ ev = chat(agent=True, work=True)
 ok('no project: the page is told', any(e.get('godotfail') == 'noproject' for e in ev))
 
 # ---- Unity through the chat ----
-import unity_bridge
+from luna.dev import unity_bridge
 utmp = pathlib.Path(tempfile.mkdtemp()) / 'u'; (utmp / 'Assets').mkdir(parents=True); (utmp / 'ProjectSettings').mkdir()
 (utmp / 'ProjectSettings' / 'ProjectVersion.txt').write_text('m_EditorVersion: 2022.3.10f1\n', encoding='utf-8')
 (utmp / 'Assets' / 'P.cs').write_text('using UnityEngine;\n', encoding='utf-8')
@@ -89,7 +90,8 @@ ev = chat(agent=True)
 ok('unity off: nothing happens', not any('unity' in e or 'unityfail' in e for e in ev) and '[unity:операция]' not in seen['prompt'])
 
 # ---- the project audit through the chat ----
-import codescan, time as _t
+import time as _t
+from luna.dev import codescan
 sroot = pathlib.Path(tempfile.mkdtemp()) / 'proj'; (sroot / 'src').mkdir(parents=True); (sroot / 'requirements.txt').write_text('flask\n', encoding='utf-8')
 (sroot / 'src' / 'a.py').write_text('x = 1\n', encoding='utf-8')
 devtools.GRANTED['a.py'] = {'path': str(sroot / 'src' / 'a.py'), 't': 9e19 + 1e19}
@@ -108,7 +110,8 @@ ev = chat(agent=True)
 ok('scan off: nothing happens', not any('scan' in e or 'scanfail' in e for e in ev) and '[scan:проект]' not in seen['prompt'])
 
 # ---- the git review through the chat ----
-import gitdiff, shutil as _sh
+import shutil as _sh
+from luna.dev import gitdiff
 if _sh.which('git'):
     import subprocess as _sp
     grepo = pathlib.Path(tempfile.mkdtemp()) / 'gr'; grepo.mkdir()
@@ -131,7 +134,8 @@ if _sh.which('git'):
     ok('diff off: nothing happens', not any('diff' in e or 'difffail' in e for e in ev) and '[diff:что]' not in seen['prompt'])
 
 # ---- a read-only query on the project's SQLite file through the chat ----
-import sqlrun, sqlite3
+import sqlite3
+from luna.dev import sqlrun
 sqroot = pathlib.Path(tempfile.mkdtemp()) / 'sq'; sqroot.mkdir()
 _c = sqlite3.connect(sqroot / 'app.db'); _c.execute('create table t (a)'); _c.execute('insert into t values (7)'); _c.commit(); _c.close()
 (sqroot / 'main.py').write_text('print(1)\n')
@@ -162,7 +166,7 @@ def fake_tr(m, model=None, vision=False, max_tokens=800, **kw):
     yield '[happy] Ага.'
 app.generate_stream = fake_tr
 def chat_msg(msg, **kw):
-    r = urllib.request.Request('http://127.0.0.1:8806/chat', json.dumps(dict({'message': msg}, **kw)).encode(), {'Content-Type': 'application/json', 'X-App-Token': app.TOKEN})
+    r = urllib.request.Request('http://127.0.0.1:8915/chat', json.dumps(dict({'message': msg}, **kw)).encode(), {'Content-Type': 'application/json', 'X-App-Token': app.TOKEN})
     with urllib.request.urlopen(r) as x: x.read()
 chat_msg('Падает вот так:\n' + TRACE, agent=True, work=True)
 ok('trace on: the program analysis rides next to the message', 'Разбор программы' in seen['last'] and 'pricing.py:7' in seen['last'])

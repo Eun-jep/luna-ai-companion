@@ -3,7 +3,7 @@ import os
 import sys
 from datetime import date, timedelta
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-import habits
+from luna.skills import habits
 ok = lambda n, c: print(('PASS ' if c else 'FAIL ') + n)
 
 ok('sandboxed under tests', 'luna-data-' in str(habits.FILE))

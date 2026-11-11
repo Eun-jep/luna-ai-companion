@@ -1,6 +1,6 @@
 @echo off
 rem Installs everything Luna needs on a new computer. Safe to run again: what is installed is left alone.
-rem The real work is in install.py (Russian text, easy to extend). This file only makes sure Python exists.
+rem The real work is in toolsinstall.py (Russian text, easy to extend). This file only makes sure Python exists.
 rem   install.bat            install everything
 rem   install.bat --check    only look, change nothing
 rem   install.bat --ollama   also install Ollama (local AI) without asking
@@ -32,7 +32,7 @@ echo (check only: nothing is installed)
 goto end
 
 :run
-%PYCMD% "%~dp0install.py" %*
+%PYCMD% "%~dp0toolsinstall.py" %*
 :end
 echo.
 pause

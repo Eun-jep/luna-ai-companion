@@ -3,9 +3,9 @@ import os
 import re
 import sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-import recipes
-import godot_bridge
-import unity_bridge
+from luna.skills import recipes
+from luna.dev import godot_bridge
+from luna.dev import unity_bridge
 ok = lambda n, c: print(('PASS ' if c else 'FAIL ') + n)
 
 for (engine, kind), (title, ops) in recipes.RECIPES.items():

@@ -3,7 +3,7 @@ import os
 import sys, json, tempfile, pathlib, time
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, ROOT)
-import character as C
+from luna.core import character as C
 ok = lambda n, c: print(('PASS ' if c else 'FAIL ') + n)
 tmp = pathlib.Path(tempfile.mkdtemp())
 C.MEMORY_FILE = tmp / 'memory.json'   # never her real memory
@@ -54,7 +54,7 @@ ok('and it runs', C.MEMORY['user'] == [] and C.MEMORY_FILE.is_file())
 # a file that is valid JSON but not a memory is not backed up
 C.MEMORY_FILE.write_text('[1, 2]', encoding='utf-8')
 ok('something that is not a memory is not backed up', C.backup_memory() is False)
-ok('the app loads the real thing from the project folder, backups next to memory.json', C.backups.__doc__ and 'memory-backups' in open(os.path.join(ROOT, 'character.py'), encoding='utf-8').read())
+ok('the app loads the real thing from the project folder, backups next to memory.json', C.backups.__doc__ and 'memory-backups' in open(os.path.join(ROOT, 'luna', 'core', 'character.py'), encoding='utf-8').read())
 
 # forgetting takes the copies with it
 C.MEMORY_FILE = tmp / 'memory.json'

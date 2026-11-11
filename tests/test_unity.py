@@ -3,8 +3,8 @@ the inbox hand-off to an open editor, backups, project choice. No real Unity: a 
 import os
 import sys, tempfile, pathlib, json, threading, time
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-import unity_bridge as U
-import devtools
+from luna.dev import unity_bridge as U
+from luna.dev import devtools
 ok = lambda n, c: print(('PASS ' if c else 'FAIL ') + n)
 
 def bad(text):

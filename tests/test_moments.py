@@ -2,7 +2,7 @@
 import os
 import sys, tempfile, pathlib, json, time as real_time
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-import character as C
+from luna.core import character as C
 ok = lambda n, c: print(('PASS ' if c else 'FAIL ') + n)
 
 

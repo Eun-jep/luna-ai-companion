@@ -4,7 +4,7 @@ import sys
 import tempfile
 import pathlib
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-import envdiag as E
+from luna.dev import envdiag as E
 ok = lambda n, c: print(('PASS ' if c else 'FAIL ') + n)
 
 ok('scopes', E.scope_of('') == ('all', 0) and E.scope_of('ports') == ('ports', 0) and E.scope_of('port:3000') == ('port', 3000)

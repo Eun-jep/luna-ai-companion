@@ -2,7 +2,8 @@
 import os
 import sys, tempfile, pathlib, threading, json, time, shutil, urllib.request, urllib.error
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-import runner, devtools
+from luna.hands import runner
+from luna.dev import devtools
 ok = lambda n, c: print(('PASS ' if c else 'FAIL ') + n)
 
 def refused(cmd):
@@ -61,7 +62,8 @@ old = runner.propose('pytest'); runner.PENDING[old['token']] = (runner.PENDING[o
 ok('an old plate lapses', runner.take(old['token']) is None)
 
 # ---- the server ----
-import app, character, audit
+import app
+from luna.core import character, audit
 character.MEMORY_FILE = pathlib.Path(tempfile.mkdtemp()) / 'memory.json'; app.load_memory()
 audit.FILE = pathlib.Path(tempfile.mkdtemp()) / 'journal.jsonl'
 seen = {}

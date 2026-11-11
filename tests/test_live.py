@@ -3,7 +3,8 @@ anti-repetition, the polish of clichés, chat screening / queue / events, and th
 import os
 import sys, tempfile, pathlib, threading, json, urllib.request, urllib.error
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-import convo, stream
+from luna.core import convo
+from luna.skills import stream
 ok = lambda n, c: print(('PASS ' if c else 'FAIL ') + n)
 
 # ---- reading a message ----
@@ -95,7 +96,8 @@ stream.stop()
 ok('stop: off and queue empty', not stream.ON and stream.pending() == 0)
 
 # ---- in the conversation ----
-import app, character, audit
+import app
+from luna.core import character, audit
 character.MEMORY_FILE = pathlib.Path(tempfile.mkdtemp()) / 'memory.json'; app.load_memory()
 audit.FILE = pathlib.Path(tempfile.mkdtemp()) / 'journal.jsonl'
 seen = {'n': 0, 'gen': []}
@@ -113,9 +115,9 @@ def fakegen(m):
     return 'Говорили про кино.'
 app.generate = fakegen
 from http.server import ThreadingHTTPServer
-srv = ThreadingHTTPServer(('127.0.0.1', 8806), app.Handler); threading.Thread(target=srv.serve_forever, daemon=True).start()
+srv = ThreadingHTTPServer(('127.0.0.1', 8914), app.Handler); threading.Thread(target=srv.serve_forever, daemon=True).start()
 def post(path, body):
-    r = urllib.request.Request('http://127.0.0.1:8806' + path, json.dumps(body).encode(), {'Content-Type': 'application/json', 'X-App-Token': app.TOKEN})
+    r = urllib.request.Request('http://127.0.0.1:8914' + path, json.dumps(body).encode(), {'Content-Type': 'application/json', 'X-App-Token': app.TOKEN})
     try:
         with urllib.request.urlopen(r) as x: return x.status, x.read().decode()
     except urllib.error.HTTPError as e: return e.code, e.read().decode()

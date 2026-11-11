@@ -1,11 +1,14 @@
 import os
 import sys, tempfile, pathlib, threading, json, urllib.request, urllib.error, time
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-import app, audit, codeedit, devtools
+import app
+from luna.core import audit
+from luna.hands import codeedit
+from luna.dev import devtools
 from http.server import ThreadingHTTPServer
 tmp = pathlib.Path(tempfile.mkdtemp())
 audit.FILE = tmp / 'journal.jsonl'; codeedit.BACKUPS = tmp / 'bk'
-__import__('character').MEMORY_FILE = tmp / 'memory.json'; app.load_memory()
+__import__('luna.core.character', fromlist=['_']).MEMORY_FILE = tmp / 'memory.json'; app.load_memory()
 ok = lambda n, c: print(('PASS ' if c else 'FAIL ') + n)
 
 proj = tmp / 'proj'; proj.mkdir()

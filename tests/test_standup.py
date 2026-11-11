@@ -2,7 +2,7 @@
 import os
 import sys, tempfile, pathlib, json, threading, urllib.request
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-import standup
+from luna.skills import standup
 ok = lambda n, c: print(('PASS ' if c else 'FAIL ') + n)
 tmp = pathlib.Path(tempfile.mkdtemp())
 standup.FILE = str(tmp / 'standup.json')
@@ -28,7 +28,8 @@ ok('an entry for today: no new offer', 'уже записан' in standup.block(
 ok('the block is not endless', len(b) <= 3000)
 
 # through the chat
-import app, character
+import app
+from luna.core import character
 character.MEMORY_FILE = tmp / 'memory.json'; app.load_memory()
 reply = {'text': ''}
 def fake(m, model=None, vision=False, max_tokens=800, **kw):
@@ -37,9 +38,9 @@ def fake(m, model=None, vision=False, max_tokens=800, **kw):
 app.generate_stream = fake
 app.generate = lambda m: 'нет'
 from http.server import ThreadingHTTPServer
-srv = ThreadingHTTPServer(('127.0.0.1', 8807), app.Handler); threading.Thread(target=srv.serve_forever, daemon=True).start()
+srv = ThreadingHTTPServer(('127.0.0.1', 8916), app.Handler); threading.Thread(target=srv.serve_forever, daemon=True).start()
 def chat(**kw):
-    r = urllib.request.Request('http://127.0.0.1:8807/chat', json.dumps(dict({'message': 'ну вот такой стендап'}, **kw)).encode(),
+    r = urllib.request.Request('http://127.0.0.1:8916/chat', json.dumps(dict({'message': 'ну вот такой стендап'}, **kw)).encode(),
                                {'Content-Type': 'application/json', 'X-App-Token': app.TOKEN})
     with urllib.request.urlopen(r) as x:
         return [json.loads(l) for l in x.read().decode().splitlines() if l.strip()]
@@ -54,6 +55,6 @@ standup.clear()
 ev = chat(agent=True)
 ok('work mode off: nothing is written, the block is not in the prompt', standup.load() == [] and 'lunastandup' not in reply['prompt'])
 standup.save(json.dumps({'today': ['a']}))
-req = urllib.request.Request('http://127.0.0.1:8807/forget', b'{}', {'Content-Type': 'application/json', 'X-App-Token': app.TOKEN})
+req = urllib.request.Request('http://127.0.0.1:8916/forget', b'{}', {'Content-Type': 'application/json', 'X-App-Token': app.TOKEN})
 urllib.request.urlopen(req).read()
 ok('forgetting also clears the notes', standup.load() == [])

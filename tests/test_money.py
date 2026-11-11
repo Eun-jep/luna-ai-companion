@@ -3,7 +3,8 @@ import json
 import os
 import sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-import money, netsearch
+from luna.skills import money
+from luna.hands import netsearch
 ok = lambda n, c: print(('PASS ' if c else 'FAIL ') + n)
 
 for text, want in [('100 долларов в вонах', (100.0, 'USD', 'KRW')), ('сколько будет 50 евро в долларах', (50.0, 'EUR', 'USD')), ('100 USD to KRW', (100.0, 'USD', 'KRW')),

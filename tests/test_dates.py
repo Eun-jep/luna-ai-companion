@@ -3,7 +3,7 @@ import os
 import sys
 from datetime import date, timedelta
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-import dates
+from luna.skills import dates
 ok = lambda n, c: print(('PASS ' if c else 'FAIL ') + n)
 
 T = date(2026, 11, 6)

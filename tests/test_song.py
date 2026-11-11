@@ -3,11 +3,12 @@ import os
 import sys, tempfile, pathlib, threading, json, urllib.request, urllib.error
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import numpy as np
-import hearing
+from luna.senses import hearing
 ok = lambda n, c: print(('PASS ' if c else 'FAIL ') + n)
 
 
-import app, character
+import app
+from luna.core import character
 character.MEMORY_FILE = pathlib.Path(tempfile.mkdtemp()) / 'memory.json'; app.load_memory()
 mode = {'reply': []}
 def fake(m, model=None, vision=False, max_tokens=800, **kw):

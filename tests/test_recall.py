@@ -3,7 +3,8 @@ import os
 import sys, json, tempfile, pathlib, threading, urllib.request
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, ROOT)
-import recall, convo, app, character, audit, lexicon
+import app
+from luna.core import recall, convo, character, audit, lexicon
 ok = lambda n, c: print(('PASS ' if c else 'FAIL ') + n)
 character.MEMORY_FILE = pathlib.Path(tempfile.mkdtemp()) / 'memory.json'; app.load_memory()   # never her real memory
 audit.FILE = pathlib.Path(tempfile.mkdtemp()) / 'journal.jsonl'

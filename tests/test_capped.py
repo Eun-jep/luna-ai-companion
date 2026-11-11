@@ -7,7 +7,7 @@ import sys
 import tempfile
 os.environ['LUNA_TEST'] = '1'
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-import character
+from luna.core import character
 character.MEMORY_FILE = pathlib.Path(tempfile.mkdtemp()) / 'memory.json'
 import app
 ok = lambda n, c: print(('PASS ' if c else 'FAIL ') + n)

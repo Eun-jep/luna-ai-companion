@@ -2,7 +2,8 @@
 import os
 import sys, tempfile, pathlib, threading, json, urllib.request, urllib.error, time
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-import app, audit, character
+import app
+from luna.core import audit, character
 from http.server import ThreadingHTTPServer
 tmp = pathlib.Path(tempfile.mkdtemp())
 audit.FILE = tmp / 'journal.jsonl'

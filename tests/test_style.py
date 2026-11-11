@@ -2,7 +2,7 @@
 import os
 import sys, tempfile, pathlib, json
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-import character
+from luna.core import character
 ok = lambda n, c: print(('PASS ' if c else 'FAIL ') + n)
 character.MEMORY_FILE = pathlib.Path(tempfile.mkdtemp()) / 'memory.json'
 

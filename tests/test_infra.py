@@ -2,7 +2,7 @@
 import os
 import sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-import infra as I
+from luna.dev import infra as I
 ok = lambda n, c: print(('PASS ' if c else 'FAIL ') + n)
 
 def whats(path, text):
@@ -184,7 +184,8 @@ s = I.summary('m.sql', SQL, limit=3)
 ok('summary is capped and severity-ordered', 'ПРОВЕРКА ПРОГРАММЫ' in s and s.count('\n- ') == 4 and 'и ещё' in s and s.index('[high]') < s.index('[medium]') if '[medium]' in s else 'и ещё' in s)
 
 # ---- wiring: the project audit and the file she is shown ----
-import tempfile, pathlib, time, devtools, codescan
+import tempfile, pathlib, time
+from luna.dev import devtools, codescan
 root = pathlib.Path(tempfile.mkdtemp()) / 'infra_proj'; (root / 'k8s').mkdir(parents=True)
 (root / 'k8s' / 'd.yaml').write_text(K8S, encoding='utf-8')
 (root / 'main.tf').write_text(TF, encoding='utf-8')

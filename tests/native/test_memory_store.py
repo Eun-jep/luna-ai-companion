@@ -1,7 +1,7 @@
 """memory_store.py: word-form matching, optional embedding model with SQLite cache, and that recall never breaks."""
 import pytest
 
-import memory_store as ms
+from luna.core import memory_store as ms
 
 FACTS = ['У него живёт собака по имени Мишка', 'Он любит кофе по утрам', 'Работает программистом в Сеуле', 'Мечтает поехать в Японию летом']
 

@@ -2,8 +2,8 @@
 import os
 import sys, tempfile, pathlib
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-import tables as T
-import docfiles
+from luna.skills import tables as T
+from luna.hands import docfiles
 ok = lambda n, c: print(('PASS ' if c else 'FAIL ') + n)
 
 ok('numbers in several formats', T.number('1 234,50') == 1234.5 and T.number('1,234.50') == 1234.5 and T.number('12%') == 12.0 and T.number('$5') == 5.0 and T.number(3) == 3.0)

@@ -1,11 +1,14 @@
 import sys, tempfile, pathlib, threading, json, urllib.request, urllib.error, os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-import app, office, audit, unreal_bridge, providers
+import app
+from luna.hands import office
+from luna.core import audit, providers
+from luna.dev import unreal_bridge
 from http.server import ThreadingHTTPServer
 tmp = pathlib.Path(tempfile.mkdtemp())
 office.FOLDER = tmp / 'Luna'; audit.FILE = tmp / 'journal.jsonl'
 providers.KEYS_FILE = tmp / 'keys.dat'; providers.CHOICE_FILE = tmp / 'providers.json'
-__import__('character').MEMORY_FILE = tmp / 'memory.json'; app.load_memory()
+__import__('luna.core.character', fromlist=['_']).MEMORY_FILE = tmp / 'memory.json'; app.load_memory()
 ok = lambda n, c: print(('PASS ' if c else 'FAIL ') + n)
 codes = []
 def fake_transport(code, wait=4.0):

@@ -2,7 +2,8 @@
 import os
 import sys, tempfile, pathlib, threading, json, urllib.request, urllib.error
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-import app, character as C
+import app
+from luna.core import character as C
 from http.server import ThreadingHTTPServer
 ok = lambda n, c: print(('PASS ' if c else 'FAIL ') + n)
 tmp = pathlib.Path(tempfile.mkdtemp()); C.MEMORY_FILE = tmp / 'memory.json'; app.load_memory()
@@ -71,7 +72,8 @@ post({'message': 'расскажи что-нибудь'})
 ok('a calm message leaves no tone hint', 'Тон его последних слов' not in seen['system'])
 
 # ---- her mood has causes she can name, shows in how she talks, and her views are not dropped for peace ----
-import convo, time as _t
+import time as _t
+from luna.core import convo
 def clean():
     fresh(); M['mood_why'] = []
 clean(); C.sense('ты тупая, заткнись')

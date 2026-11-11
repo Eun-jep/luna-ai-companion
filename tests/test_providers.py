@@ -1,13 +1,14 @@
 import os
 import sys, tempfile, pathlib, threading, json, urllib.request, urllib.error
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-import providers, app
+import app
+from luna.core import providers
 from http.server import ThreadingHTTPServer, BaseHTTPRequestHandler
 
 tmp = pathlib.Path(tempfile.mkdtemp())
 providers.KEYS_FILE = tmp / 'keys.dat'
 providers.CHOICE_FILE = tmp / 'providers.json'
-__import__('character').MEMORY_FILE = tmp / 'memory.json'
+__import__('luna.core.character', fromlist=['_']).MEMORY_FILE = tmp / 'memory.json'
 app.load_memory()
 SECRET = 'sk-TESTKEY-1234567890abcd'
 seen = []

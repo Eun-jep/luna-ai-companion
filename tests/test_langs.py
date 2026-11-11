@@ -2,7 +2,10 @@
 import os
 import sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-import app, convo, exact, testgen, reminders
+import app
+from luna.core import convo
+from luna.skills import exact, reminders
+from luna.dev import testgen
 ok = lambda n, c: print(('PASS ' if c else 'FAIL ') + n)
 
 ASKS = {
@@ -32,7 +35,7 @@ for ph in ['кто сейчас президент?', 'who is the president now?
     ok('lookup: ' + ph, convo.FRESH.search(ph))
 
 # her search and open commands in every language, and a file is not a web search
-import agent
+from luna.hands import agent
 known = lambda n: n.lower() in ('youtube', 'ютуб', '유튜브')
 SEARCH = ['поищи в интернете погоду в Сеуле', 'поищи погоду в интернете', 'search the web for weather', 'google weather', '인터넷에서 날씨 검색해줘', '날씨 알아봐줘', 'ネットで天気を検索して', '東京の天気を調べて', '歌詞を探して']
 for ph in SEARCH:
@@ -95,7 +98,7 @@ for ph in ['меня бесит этот принтер, опять не раб�
 ok('teasing is not irritation', 'раздражён' not in convo.hints([], 'ты тупая, бесит', pick=lambda r: list(r)[-1]))
 
 # the tone of his words (rude / sorry / thanks / sad / angry / tired / happy) is read in all four languages, and plain chat has none
-import character as _C
+from luna.core import character as _C
 TONE_CASES = [
     ('rude', ['ты тупая, заткнись', 'shut up', '닥쳐', '黙れ']),
     ('sorry', ['прости меня', "i'm sorry", '미안해', 'ごめんね']),

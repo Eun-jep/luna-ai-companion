@@ -34,7 +34,7 @@ python_version = "3.10"
 ignore_missing_imports = true
 warn_unused_ignores = true
 check_untyped_defs = false
-files = ["paths.py", "security.py", "memory_store.py"]
+files = ["luna/paths.py", "luna/security.py", "luna/core/memory_store.py"]
 
 [tool.coverage.run]
 source = ["."]

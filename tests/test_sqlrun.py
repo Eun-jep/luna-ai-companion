@@ -2,7 +2,8 @@
 import os
 import sys, json, sqlite3, tempfile, pathlib, threading, time, urllib.request, urllib.error
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-import sqlrun, runner
+from luna.dev import sqlrun
+from luna.hands import runner
 ok = lambda n, c: print(('PASS ' if c else 'FAIL ') + n)
 
 root = pathlib.Path(tempfile.mkdtemp())
@@ -77,9 +78,9 @@ ok('no database in the project', sqlrun.propose('select 1') == {'fail': 'nodb'})
 # over HTTP
 import app
 from http.server import ThreadingHTTPServer
-srv = ThreadingHTTPServer(('127.0.0.1', 8804), app.Handler); threading.Thread(target=srv.serve_forever, daemon=True).start()
+srv = ThreadingHTTPServer(('127.0.0.1', 8899), app.Handler); threading.Thread(target=srv.serve_forever, daemon=True).start()
 def post(path, d):
-    rq = urllib.request.Request('http://127.0.0.1:8804' + path, json.dumps(d).encode(), {'Content-Type': 'application/json', 'X-App-Token': app.TOKEN})
+    rq = urllib.request.Request('http://127.0.0.1:8899' + path, json.dumps(d).encode(), {'Content-Type': 'application/json', 'X-App-Token': app.TOKEN})
     try:
         with urllib.request.urlopen(rq) as x: return x.status, json.loads(x.read())
     except urllib.error.HTTPError as e: return e.code, json.loads(e.read())

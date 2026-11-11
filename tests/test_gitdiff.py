@@ -2,8 +2,8 @@
 import os
 import sys, tempfile, pathlib, subprocess, shutil, time
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-import gitdiff as G
-import devtools
+from luna.dev import gitdiff as G
+from luna.dev import devtools
 ok = lambda n, c: print(('PASS ' if c else 'FAIL ') + n)
 
 ok('scopes', G.scope_args('')[0] == 'working' and G.scope_args('staged')[0] == 'staged' and G.scope_args('last')[0] == 'last'

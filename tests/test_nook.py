@@ -3,7 +3,9 @@ import os
 import sys, json, tempfile, pathlib, threading, urllib.request
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, ROOT)
-import nook, app, character, audit
+import app
+from luna.hands import nook
+from luna.core import character, audit
 ok = lambda n, c: print(('PASS ' if c else 'FAIL ') + n)
 character.MEMORY_FILE = pathlib.Path(tempfile.mkdtemp()) / 'memory.json'; app.load_memory()   # never her real memory
 audit.FILE = pathlib.Path(tempfile.mkdtemp()) / 'journal.jsonl'
@@ -90,7 +92,7 @@ seen['reply'] = ['Привет.']
 chat('привет')
 ok('she sees her corner in her prompt and knows the command', '[note:' in seen['system'] and 'Про дождь' in seen['system'])
 
-import stream
+from luna.skills import stream
 stream.ON = True
 seen['reply'] = ['Привет, чат. [note:Эфир >> запись из эфира.]']
 chat('привет, эфир')
@@ -159,7 +161,7 @@ chat('как дела ещё')
 ok('and not again right away', 'Прошла неделя' not in seen['last'])
 ok('with fewer than two notes it stays quiet', (setattr(nook, 'ROOT', pathlib.Path(tempfile.mkdtemp()) / 'none'), nook.reread_hint(0, 9e9))[1] == '')
 nook.ROOT = box
-ok('the week mark is kept in memory and loaded back', 'nook_read' in open(os.path.join(ROOT, 'character.py'), encoding='utf-8').read().split('def load_memory')[1].split('def mood_now')[0])
+ok('the week mark is kept in memory and loaded back', 'nook_read' in open(os.path.join(ROOT, 'luna', 'core', 'character.py'), encoding='utf-8').read().split('def load_memory')[1].split('def mood_now')[0])
 
 # said aloud: she is told recognition may have misheard
 chat('привет как дела у тебя сегодня', spoken=True)

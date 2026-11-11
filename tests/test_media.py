@@ -2,7 +2,7 @@
 import os
 import sys, tempfile, pathlib, threading, json, urllib.request, urllib.error
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-import media
+from luna.senses import media
 ok = lambda n, c: print(('PASS ' if c else 'FAIL ') + n)
 
 D = media.detect
@@ -43,7 +43,8 @@ ok('prompt: asks for honesty about works she does not know and allows silence', 
 ok('prompt for an ordinary chat is a short hint', 'открыто' in media.prompt(info, first=False))
 
 # the server
-import app, character
+import app
+from luna.core import character
 tmp = pathlib.Path(tempfile.mkdtemp()); character.MEMORY_FILE = tmp / 'memory.json'; app.load_memory()
 seen = {}
 def fake(m, model=None, vision=False, max_tokens=800, **kw):

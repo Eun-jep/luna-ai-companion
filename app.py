@@ -1,7 +1,7 @@
 """Local companion: Live2D avatar + chat + speech. Server needs only the Python stdlib
 for chat; speech synthesis uses the optional `edge-tts` package."""
-import paths
-import security
+from luna import paths
+from luna import security
 import asyncio
 import itertools
 import json
@@ -100,59 +100,59 @@ def speech_vocab():
 ACTIONS_FILE = paths.data_file('actions.json')
 STATE_FILE = paths.data_file('ui-state.json')   # window settings and her place on the screen: the same at every launch
 PENDING = {}          # id -> time she asked for it; /act accepts only what she actually asked for, once
-from agent import ACT_RE
-import agent
-import standup
-import control
-import unreal_bridge
-import godot_bridge
-import unity_bridge
-import codescan
-import envdiag
-import exact
-import lexicon
-import gitdiff
-import sqlrun
+from luna.hands.agent import ACT_RE
+from luna.hands import agent
+from luna.skills import standup
+from luna.hands import control
+from luna.dev import unreal_bridge
+from luna.dev import godot_bridge
+from luna.dev import unity_bridge
+from luna.dev import codescan
+from luna.dev import envdiag
+from luna.skills import exact
+from luna.core import lexicon
+from luna.dev import gitdiff
+from luna.dev import sqlrun
 import traces
-import logs
-import sqlcheck
-import testgen
-import devtools
-import providers
-import office
-import audit
-import codeedit
-import projects
-import character
-import voice
-import docfiles
-import netsearch
-import runner
-import convo
-import reminders
-import lists
-import habits
-import dates
-import mathtalk
-import engines
-import recipes
-import gameerrors
-import manners
-import abilities
-import pcstate
-import agenda
-import money
-import chance
-import faces
-import recall
-import nook
-import stream
-import studio
-import media
-import hearing
-import songid
+from luna.dev import logs
+from luna.dev import sqlcheck
+from luna.dev import testgen
+from luna.dev import devtools
+from luna.core import providers
+from luna.hands import office
+from luna.core import audit
+from luna.hands import codeedit
+from luna.hands import projects
+from luna.core import character
+from luna.core import voice
+from luna.hands import docfiles
+from luna.hands import netsearch
+from luna.hands import runner
+from luna.core import convo
+from luna.skills import reminders
+from luna.skills import lists
+from luna.skills import habits
+from luna.skills import dates
+from luna.skills import mathtalk
+from luna.dev import engines
+from luna.skills import recipes
+from luna.dev import gameerrors
+from luna.skills import manners
+from luna.skills import abilities
+from luna.skills import pcstate
+from luna.skills import agenda
+from luna.skills import money
+from luna.skills import chance
+from luna.core import faces
+from luna.core import recall
+from luna.hands import nook
+from luna.skills import stream
+from luna.hands import studio
+from luna.senses import media
+from luna.senses import hearing
+from luna.senses import songid
 hearing.VOCAB_SOURCE = lambda: speech_vocab()   # the recognizer prefers his own names and titles
-from character import (HISTORY, MEMORY, MEMORY_LIMIT, MEMORY_EVERY, REFLECT_EVERY, MOOD_BASE, NOTE, TAG_RE, load_memory, save_memory,
+from luna.core.character import (HISTORY, MEMORY, MEMORY_LIMIT, MEMORY_EVERY, REFLECT_EVERY, MOOD_BASE, NOTE, TAG_RE, load_memory, save_memory,
                        mood_now, mood_from_script, describe_mood, update_memory, reflect)
 character.use_embeddings(CONFIG.get('embeddings'))   # optional: "embeddings": "ollama:nomic-embed-text" in settings.json (meaning-based recall)
 character.llm = lambda messages: generate(messages)   # the character thinks through whichever network is chosen

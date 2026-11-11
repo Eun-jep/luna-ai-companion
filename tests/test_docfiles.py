@@ -2,7 +2,7 @@
 import os
 import sys, tempfile, pathlib, threading, json, time, urllib.request, urllib.error
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-import docfiles
+from luna.hands import docfiles
 ok = lambda n, c: print(('PASS ' if c else 'FAIL ') + n)
 
 base = pathlib.Path(tempfile.mkdtemp())
@@ -101,7 +101,8 @@ p = docfiles.propose_move('photo.png >> Pictures')
 ok('an everyday folder name works', p.get('to') == str(dl / 'Pictures'))
 
 # ---- the server ----
-import app, character, audit
+import app
+from luna.core import character, audit
 character.MEMORY_FILE = pathlib.Path(tempfile.mkdtemp()) / 'memory.json'; app.load_memory()
 audit.FILE = pathlib.Path(tempfile.mkdtemp()) / 'journal.jsonl'
 seen = {}

@@ -1,7 +1,7 @@
 import os
 import sys, json, tempfile, pathlib
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-import office
+from luna.hands import office
 office.FOLDER = pathlib.Path(tempfile.mkdtemp()) / 'Luna'
 ok = lambda n, c: print(('PASS ' if c else 'FAIL ') + n)
 

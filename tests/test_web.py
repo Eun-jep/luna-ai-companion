@@ -3,7 +3,7 @@ and her own read-only research with [web:...]. A fake network and fake model: no
 import os
 import sys, tempfile, pathlib, threading, json, urllib.request, urllib.error
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-import netsearch
+from luna.hands import netsearch
 ok = lambda n, c: print(('PASS ' if c else 'FAIL ') + n)
 
 # ---- which addresses are allowed ----
@@ -58,7 +58,7 @@ ok('resolve: an unknown name is not opened by itself', netsearch.resolve_site('�
 ok('candidates: an unknown name is searched, one per host', [u for u, t in netsearch.site_candidates('страница b')][:1] == ['https://b.com/page'])
 ok('candidates: an address is never searched', netsearch.site_candidates('http://127.0.0.1:8000') == [])
 ok('names in other languages', all(netsearch.resolve_site(n)[0] == u for n, u in [('유튜브를', 'https://www.youtube.com'), ('сайт гитхаб', 'https://github.com'), ('ユーチューブ', 'https://www.youtube.com')]))
-import agent as _ag
+from luna.hands import agent as _ag
 _k = netsearch.known_site
 _ic = lambda t: _ag.intent_commands(t, _k)
 ok('intent: ru/en/ko/ja open', _ic('открой гитхаб') == [('go', 'гитхаб')] and _ic('open github') == [('go', 'github')] and _ic('유튜브 열어줘') == [('go', '유튜브')] and _ic('ユーチューブを開いて') == [('go', 'ユーチューブ')])
@@ -68,8 +68,10 @@ ok('intent: search in en/ko/ja', _ic('google cats')[0][0] == 'search' and _ic('�
 ok('resolve: nothing', netsearch.resolve_site('') is None)
 
 # ---- in the conversation ----
-import app, character, audit, agent
-import paths; paths.seed('actions.json', os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'actions.example.json'))   # a test list of openable things, never the user's own
+import app
+from luna.core import character, audit
+from luna.hands import agent
+from luna import paths; paths.seed('actions.json', os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'actions.example.json'))   # a test list of openable things, never the user's own
 real_research = netsearch.research
 character.MEMORY_FILE = pathlib.Path(tempfile.mkdtemp()) / 'memory.json'; app.load_memory()
 audit.FILE = pathlib.Path(tempfile.mkdtemp()) / 'journal.jsonl'
@@ -83,9 +85,9 @@ def fake(m, model=None, vision=False, max_tokens=800, **kw):
     yield from seen['reply']
 app.generate_stream = fake
 from http.server import ThreadingHTTPServer
-srv = ThreadingHTTPServer(('127.0.0.1', 8805), app.Handler); threading.Thread(target=srv.serve_forever, daemon=True).start()
+srv = ThreadingHTTPServer(('127.0.0.1', 8912), app.Handler); threading.Thread(target=srv.serve_forever, daemon=True).start()
 def chat(text, **kw):
-    r = urllib.request.Request('http://127.0.0.1:8805/chat', json.dumps(dict({'message': text, 'agent': True}, **kw)).encode(), {'Content-Type': 'application/json', 'X-App-Token': app.TOKEN})
+    r = urllib.request.Request('http://127.0.0.1:8912/chat', json.dumps(dict({'message': text, 'agent': True}, **kw)).encode(), {'Content-Type': 'application/json', 'X-App-Token': app.TOKEN})
     with urllib.request.urlopen(r) as x: return [json.loads(l) for l in x.read().decode().splitlines() if l]
 
 seen['reply'] = ['[happy] Открываю. [open:youtube]']
@@ -153,7 +155,7 @@ ev = chat('данные', web=True, depth=2)
 ok('calc does not loop forever', not any('calc' in e for e in ev))
 
 # ---- what she looked up stays with her ----
-import character
+from luna.core import character
 character.MEMORY['learned'] = []
 seen['reply'] = ['Йена сейчас стоит около 0,6 рубля за единицу, по данным Московской биржи.']
 chat('Курс йены в рублях', web=True, depth=1, webq='курс йены сегодня')

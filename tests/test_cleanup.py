@@ -2,7 +2,7 @@
 import os, sys, tempfile, time
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-import cleanup
+from tools import cleanup
 
 ok = fail = 0
 def check(name, cond):

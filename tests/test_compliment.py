@@ -2,7 +2,7 @@
 import os
 import sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-import convo
+from luna.core import convo
 ok = lambda n, c: print(('PASS ' if c else 'FAIL ') + n)
 
 MARK = 'Он хвалит тебя саму'

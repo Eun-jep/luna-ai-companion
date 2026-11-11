@@ -1,5 +1,5 @@
 """security.py: Host / Origin checks (DNS rebinding), token comparison, headers, neutralizing outside text."""
-import security
+from luna import security
 
 PORT = 47615
 

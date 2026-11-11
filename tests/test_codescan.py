@@ -2,8 +2,8 @@
 import os
 import sys, tempfile, pathlib, time
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-import codescan as C
-import devtools
+from luna.dev import codescan as C
+from luna.dev import devtools
 ok = lambda n, c: print(('PASS ' if c else 'FAIL ') + n)
 
 root = pathlib.Path(tempfile.mkdtemp()) / 'shop'

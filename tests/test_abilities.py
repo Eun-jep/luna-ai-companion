@@ -2,7 +2,7 @@
 import os
 import sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-import abilities
+from luna.skills import abilities
 ok = lambda n, c: print(('PASS ' if c else 'FAIL ') + n)
 
 for ph in ['что ты умеешь?', 'а что ты ещё умеешь', 'какие у тебя навыки', 'чем ты можешь помочь', 'what can you do?', 'what are your skills', 'how can you help me',

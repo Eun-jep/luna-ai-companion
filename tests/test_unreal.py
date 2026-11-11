@@ -1,7 +1,8 @@
 import os
 import sys, tempfile, pathlib, threading, json, urllib.request, urllib.error, ast
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-import app, unreal_bridge as ub
+import app
+from luna.dev import unreal_bridge as ub
 from http.server import ThreadingHTTPServer
 
 # parsing: valid and hostile
@@ -34,7 +35,7 @@ print('rate:', ub.run(ub.parse('scale 2'), fake_ok))
 ub._recent[:] = []
 
 # server flow
-__import__('character').MEMORY_FILE = pathlib.Path(tempfile.mkdtemp()) / 'memory.json'
+__import__('luna.core.character', fromlist=['_']).MEMORY_FILE = pathlib.Path(tempfile.mkdtemp()) / 'memory.json'
 app.KEY = 'dummy'; app.load_memory()
 prompts = []
 def fake(m, model=None, **kw):

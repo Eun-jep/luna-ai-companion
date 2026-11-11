@@ -2,7 +2,7 @@
 import os
 import sys, tempfile, pathlib, threading, json, urllib.request, urllib.error
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-import studio
+from luna.hands import studio
 ok = lambda n, c: print(('PASS ' if c else 'FAIL ') + n)
 
 tmp = pathlib.Path(tempfile.mkdtemp())
@@ -43,7 +43,8 @@ ok('a request for a theme names no song', studio.find('спой про дожд�
 ok('empty library finds nothing', studio.find('') is None)
 
 # ---- the server ----
-import app, character
+import app
+from luna.core import character
 character.MEMORY_FILE = pathlib.Path(tempfile.mkdtemp()) / 'memory.json'; app.load_memory()
 seen = {}
 def fake(m, model=None, vision=False, max_tokens=800, **kw):
@@ -52,13 +53,13 @@ def fake(m, model=None, vision=False, max_tokens=800, **kw):
 app.generate_stream = fake
 app.generate = lambda m: 'не умею'
 from http.server import ThreadingHTTPServer
-srv = ThreadingHTTPServer(('127.0.0.1', 8803), app.Handler); threading.Thread(target=srv.serve_forever, daemon=True).start()
+srv = ThreadingHTTPServer(('127.0.0.1', 8911), app.Handler); threading.Thread(target=srv.serve_forever, daemon=True).start()
 def call(path, body=None, raw=None, token=True, headers=None):
     data = raw if raw is not None else json.dumps(body or {}).encode()
     h = {'Content-Type': 'application/json'}
     if token: h['X-App-Token'] = app.TOKEN
     h.update(headers or {})
-    r = urllib.request.Request('http://127.0.0.1:8803' + path, data, h)
+    r = urllib.request.Request('http://127.0.0.1:8911' + path, data, h)
     try:
         with urllib.request.urlopen(r) as x: return x.status, x.read(), x.headers
     except urllib.error.HTTPError as e: return e.code, e.read(), e.headers

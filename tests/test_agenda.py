@@ -3,7 +3,7 @@ import os
 import sys
 import time
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-import agenda
+from luna.skills import agenda
 ok = lambda n, c: print(('PASS ' if c else 'FAIL ') + n)
 
 for text in ['что у меня на сегодня', 'какие планы на завтра', 'мои дела на сегодня', "what's on today", 'what do I have tomorrow', "what's on my schedule",

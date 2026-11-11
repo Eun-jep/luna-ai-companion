@@ -2,7 +2,7 @@
 import os
 import sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-import manners
+from luna.skills import manners
 ok = lambda n, c: print(('PASS ' if c else 'FAIL ') + n)
 
 ok('sandboxed under tests', 'luna-data-' in str(manners.FILE))
@@ -59,7 +59,7 @@ import json
 import pathlib
 import tempfile
 os.environ['LUNA_TEST'] = '1'
-import character
+from luna.core import character
 character.MEMORY_FILE = pathlib.Path(tempfile.mkdtemp()) / 'memory.json'
 import app
 seen = []

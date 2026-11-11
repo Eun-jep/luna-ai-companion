@@ -2,7 +2,7 @@
 import importlib
 import os
 
-import paths
+from luna import paths
 
 
 def test_data_dir_is_not_the_project_folder():

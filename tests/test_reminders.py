@@ -5,7 +5,8 @@ import time
 import tempfile
 import pathlib
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-import character, reminders, convo
+from luna.core import character, convo
+from luna.skills import reminders
 character.MEMORY_FILE = pathlib.Path(tempfile.mkdtemp()) / 'memory.json'   # never her real memory
 ok = lambda n, c: print(('PASS ' if c else 'FAIL ') + n)
 

@@ -1,11 +1,13 @@
 import os
 import sys, tempfile, pathlib, threading, json, urllib.request, urllib.error, time
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-import app, audit, projects
+import app
+from luna.core import audit
+from luna.hands import projects
 from http.server import ThreadingHTTPServer
 tmp = pathlib.Path(tempfile.mkdtemp())
 audit.FILE = tmp / 'journal.jsonl'; projects.ROOT = tmp / 'sandbox'; projects.MANIFESTS = tmp / 'manifests'; projects.WS_FILE = tmp / 'ws.json'
-__import__('character').MEMORY_FILE = tmp / 'memory.json'; app.load_memory()
+__import__('luna.core.character', fromlist=['_']).MEMORY_FILE = tmp / 'memory.json'; app.load_memory()
 ok = lambda n, c: print(('PASS ' if c else 'FAIL ') + n)
 
 
@@ -33,11 +35,11 @@ plate = code(GOOD)
 ok('plate lists every file and has a pseudo diff', isinstance(plate, dict) and len(plate['files']) == 3 and plate['file'] == 'Змейка' and '@@ src/game.py (3) @@' in plate['diff'] and '+print("hi")' in plate['diff'])
 ok('nothing is created before the press', not (tmp / 'sandbox').exists())
 
-srv = ThreadingHTTPServer(('127.0.0.1', 8797), app.Handler); threading.Thread(target=srv.serve_forever, daemon=True).start()
+srv = ThreadingHTTPServer(('127.0.0.1', 8910), app.Handler); threading.Thread(target=srv.serve_forever, daemon=True).start()
 def post(path, d, token=True):
     h = {'Content-Type': 'application/json'}
     if token: h['X-App-Token'] = app.TOKEN
-    r = urllib.request.Request('http://127.0.0.1:8797' + path, json.dumps(d).encode(), h)
+    r = urllib.request.Request('http://127.0.0.1:8910' + path, json.dumps(d).encode(), h)
     try:
         with urllib.request.urlopen(r) as x: return x.status, x.read().decode()
     except urllib.error.HTTPError as e: return e.code, e.read().decode()

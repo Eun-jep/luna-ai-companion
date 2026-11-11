@@ -2,7 +2,7 @@
 import os
 import sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-import logs, sqlcheck, testgen
+from luna.dev import logs, sqlcheck, testgen
 ok = lambda n, c: print(('PASS ' if c else 'FAIL ') + n)
 
 LOG = '''2025-03-01 10:00:01 INFO  service starting
@@ -73,7 +73,8 @@ ok('testgen: capped list', testgen.analyze(many).count('— f') == testgen.MAX_F
 
 # the hook in app.py: only in work mode, next to his message
 import tempfile, pathlib, threading, json, urllib.request, urllib.error
-import app, character
+import app
+from luna.core import character
 character.MEMORY_FILE = pathlib.Path(tempfile.mkdtemp()) / 'memory.json'; app.load_memory()
 seen = {}
 def fake(m, model=None, vision=False, max_tokens=800, **kw):

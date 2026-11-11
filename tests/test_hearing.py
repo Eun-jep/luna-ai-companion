@@ -4,7 +4,8 @@ import os
 import sys, tempfile, pathlib, threading, json, urllib.request, urllib.error, zipfile, io, time
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import numpy as np
-import hearing, media, voice
+from luna.senses import hearing, media
+from luna.core import voice
 _real_listen = hearing.listen   # a later part of this file replaces listen with a fake
 ok = lambda n, c: print(('PASS ' if c else 'FAIL ') + n)
 
@@ -90,9 +91,10 @@ both = media.prompt(info, heard={'kind': 'music', 'about': 'играет муз�
 ok('a known title plus what she hears', 'Frieren' in both and 'играет музыка (громкая)' in both)
 
 # ---- the server ----
-import app, character
+import app
+from luna.core import character
 character.MEMORY_FILE = pathlib.Path(tempfile.mkdtemp()) / 'memory.json'; app.load_memory()
-import audit; audit.FILE = pathlib.Path(tempfile.mkdtemp()) / 'journal.jsonl'   # the real journal is never written by a test
+from luna.core import audit; audit.FILE = pathlib.Path(tempfile.mkdtemp()) / 'journal.jsonl'   # the real journal is never written by a test
 seen = {}
 def fake(m, model=None, vision=False, max_tokens=800, **kw):
     seen['last'] = m[-1]['content'] if isinstance(m[-1]['content'], str) else m[-1]['content'][-1]['text']
@@ -275,7 +277,7 @@ ok('louder and faster is named', said(0.5, 1.5, 9) == 'громче обычно
 ok('a very short phrase says nothing', said(0.05, 0.5, 2) == '')
 
 # ---- which song, by its sound (opt-in; a fingerprint, not the sound, goes to the outside service) ----
-import songid
+from luna.senses import songid
 hearing.listen = _real_listen
 ok('the sound is kept for a moment only when asked, taken once, then gone', True)
 hearing.reset(); hearing._state.update(status='ready', error=''); hearing._lang = 'ru'
@@ -300,7 +302,7 @@ songid.identify = lambda a, timeout=25: None
 post('/chat', dict(ASK, songid=True))
 ok('no match: she is told to say so honestly', 'опознать не удалось' in seen['last'] and 'Shazam назвал' not in seen['last'])
 ok('the sound is not kept after the answer', hearing.take_audio() is None)
-ok('journal says it happened, without the title', any(e['kind'] == 'songid' and 'Ночь' not in json.dumps(e, ensure_ascii=False) for e in __import__('audit')._read()))
+ok('journal says it happened, without the title', any(e['kind'] == 'songid' and 'Ночь' not in json.dumps(e, ensure_ascii=False) for e in __import__('luna.core.audit', fromlist=['_'])._read()))
 ok('wav bytes are a real wav', songid.wav_bytes(np.zeros(1600))[:4] == b'RIFF')
 ok('a title is cleaned of tag-like characters and cut', songid.clean('A [web:x] «B» ' + 'z' * 200) == 'A web:x B ' + 'z' * 70 or len(songid.clean('A [web:x] «B» ' + 'z' * 200)) <= 80 and '[' not in songid.clean('[x]'))
 ok('no answer / odd answer: nothing recognized', songid.parse({}) is None and songid.parse({'track': 5}) is None and songid.parse({'track': {'title': ''}}) is None)

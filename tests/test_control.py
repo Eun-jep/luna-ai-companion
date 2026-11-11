@@ -1,7 +1,8 @@
 import os
 import sys, tempfile, pathlib, threading, json, urllib.request, urllib.error
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-import app, control, inputctl
+import app
+from luna.hands import control, inputctl
 from http.server import ThreadingHTTPServer
 inputctl.DRY = True
 import traceback
@@ -10,7 +11,7 @@ def _w(*a, **k):
     try: return _o(*a, **k)
     except BaseException: traceback.print_exc(); raise
 control.plan_step = _w
-__import__('character').MEMORY_FILE = pathlib.Path(tempfile.mkdtemp()) / 'memory.json'
+__import__('luna.core.character', fromlist=['_']).MEMORY_FILE = pathlib.Path(tempfile.mkdtemp()) / 'memory.json'
 app.KEY = 'dummy'; app.load_memory()
 replies = []
 def fake(m, model=None, **kw):

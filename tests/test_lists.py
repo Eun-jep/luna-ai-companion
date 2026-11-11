@@ -5,7 +5,7 @@ import sys
 import tempfile
 import pathlib
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-import lists
+from luna.skills import lists
 lists.FILE = pathlib.Path(tempfile.mkdtemp()) / 'lists.json'
 ok = lambda n, c: print(('PASS ' if c else 'FAIL ') + n)
 

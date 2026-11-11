@@ -2,7 +2,7 @@
 import os
 import sys, tempfile, pathlib, threading, json, urllib.request, urllib.error
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-import voice
+from luna.core import voice
 ok = lambda n, c: print(('PASS ' if c else 'FAIL ') + n)
 S = voice.shape
 
@@ -38,7 +38,8 @@ big = S('Ха-ха-ха!', 'excited', {'v': 1, 'e': 1})
 ok('values stay in the service limits', all(voice.LIMITS[k][0] <= big[k] <= voice.LIMITS[k][1] for k in ('rate', 'pitch', 'volume')))
 
 # the endpoint passes the shaped values to the speech service
-import app, character
+import app
+from luna.core import character
 tmp = pathlib.Path(tempfile.mkdtemp()); character.MEMORY_FILE = tmp / 'memory.json'; app.load_memory()
 seen = {}
 def fake(text, v, rate=0, pitch=0, volume=0):

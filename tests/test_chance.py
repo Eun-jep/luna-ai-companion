@@ -2,7 +2,7 @@
 import os
 import sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-import chance
+from luna.skills import chance
 ok = lambda n, c: print(('PASS ' if c else 'FAIL ') + n)
 
 for text, want in [('подбрось монетку', ('coin',)), ('heads or tails?', ('coin',)), ('flip a coin', ('coin',)), ('동전 던져줘', ('coin',)), ('コイン投げて', ('coin',)),

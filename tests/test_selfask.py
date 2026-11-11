@@ -2,7 +2,7 @@
 import os
 import sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-import convo
+from luna.core import convo
 ok = lambda n, c: print(('PASS ' if c else 'FAIL ') + n)
 
 asks = ['ты живая?', 'ты настоящая?', 'ты правда меня любишь?', 'ты скучаешь, когда меня нет?', 'тебе бывает одиноко?', 'у тебя есть чувства?', 'ты робот?', 'ты вообще что-то чувствуешь',

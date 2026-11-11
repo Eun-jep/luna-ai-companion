@@ -2,7 +2,7 @@
 import os
 import sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-import pcstate
+from luna.skills import pcstate
 ok = lambda n, c: print(('PASS ' if c else 'FAIL ') + n)
 GB = 1024 ** 3
 

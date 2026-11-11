@@ -1,7 +1,8 @@
 import os
 import sys, tempfile, pathlib, threading, json, urllib.request, urllib.error
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-import app, devtools, unreal_bridge as ub
+import app
+from luna.dev import devtools, unreal_bridge as ub
 from http.server import ThreadingHTTPServer
 
 # pull_code: streaming in odd chunks gives the same blocks as one piece
@@ -54,7 +55,7 @@ try: devtools.read_code('t2')
 except OSError: print('direct secret refused')
 
 # server: a reply with code + read tag
-__import__('character').MEMORY_FILE = pathlib.Path(tempfile.mkdtemp()) / 'memory.json'
+__import__('luna.core.character', fromlist=['_']).MEMORY_FILE = pathlib.Path(tempfile.mkdtemp()) / 'memory.json'
 app.KEY = 'dummy'; app.load_memory()
 def fake(m, model=None, **kw):
     yield '[happy] Держи, вот пример. [read:Player.cs]\n```csharp\nvoid Update() { }\n```\n'

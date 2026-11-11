@@ -2,7 +2,7 @@
 import os
 import sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-import audit
+from luna.core import audit
 ok = lambda n, c: print(('PASS ' if c else 'FAIL ') + n)
 real = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'journal.jsonl')
 ok('a test script gets its own temporary journal', os.path.abspath(str(audit.FILE)) != os.path.abspath(real) and 'luna-data-' in str(audit.FILE))

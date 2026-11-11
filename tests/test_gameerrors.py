@@ -3,7 +3,7 @@ import os
 import re
 import sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-import gameerrors
+from luna.dev import gameerrors
 ok = lambda n, c: print(('PASS ' if c else 'FAIL ') + n)
 
 cases = [("Invalid call. Nonexistent function 'move_and_slide' in base 'Nil'.", 'Godot'), ("Node not found: \"Player/Sprite\" (relative to \"/root/Main\").", 'Godot'),

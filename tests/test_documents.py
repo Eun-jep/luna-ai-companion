@@ -1,11 +1,12 @@
 import os
 import sys, tempfile, pathlib, threading, json, urllib.request, urllib.error
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-import app, office
+import app
+from luna.hands import office
 from http.server import ThreadingHTTPServer
 tmp = pathlib.Path(tempfile.mkdtemp())
 office.FOLDER = tmp / 'Luna'
-__import__('character').MEMORY_FILE = tmp / 'memory.json'; app.load_memory()
+__import__('luna.core.character', fromlist=['_']).MEMORY_FILE = tmp / 'memory.json'; app.load_memory()
 ok = lambda n, c: print(('PASS ' if c else 'FAIL ') + n)
 
 SPEC = {'type': 'pptx', 'title': 'Отчёт', 'slides': [{'layout': 'title', 'title': 'Отчёт', 'subtitle': 'Q3'}, {'title': 'Итоги', 'bullets': ['Рост', 'Клиенты']}]}

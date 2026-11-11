@@ -1,8 +1,8 @@
 """character.recall uses the meaning of a fact when an embedding model is set, and still works when there is none (or it is down)."""
 import pytest
 
-import character
-import memory_store
+from luna.core import character
+from luna.core import memory_store
 
 
 @pytest.fixture(autouse=True)

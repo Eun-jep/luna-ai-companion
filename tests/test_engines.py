@@ -3,7 +3,7 @@ import os
 import sys
 import tempfile
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-import engines
+from luna.dev import engines
 ok = lambda n, c: print(('PASS ' if c else 'FAIL ') + n)
 
 root = tempfile.mkdtemp(prefix='luna-engines-')

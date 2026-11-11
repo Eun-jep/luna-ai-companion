@@ -3,7 +3,8 @@ import os
 import sys, re, json, tempfile, pathlib, threading, urllib.request
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, ROOT)
-import faces, app, character, voice, audit
+import app
+from luna.core import faces, character, voice, audit
 ok = lambda n, c: print(('PASS ' if c else 'FAIL ') + n)
 character.MEMORY_FILE = pathlib.Path(tempfile.mkdtemp()) / 'memory.json'; app.load_memory()   # never her real memory
 audit.FILE = pathlib.Path(tempfile.mkdtemp()) / 'journal.jsonl'
@@ -44,9 +45,9 @@ def fake(m, model=None, vision=False, max_tokens=800, **kw):
     yield from seen['reply']
 app.generate_stream = fake
 from http.server import ThreadingHTTPServer
-srv = ThreadingHTTPServer(('127.0.0.1', 8806), app.Handler); threading.Thread(target=srv.serve_forever, daemon=True).start()
+srv = ThreadingHTTPServer(('127.0.0.1', 8913), app.Handler); threading.Thread(target=srv.serve_forever, daemon=True).start()
 def chat(text, **kw):
-    r = urllib.request.Request('http://127.0.0.1:8806/chat', json.dumps(dict({'message': text}, **kw)).encode(), {'Content-Type': 'application/json', 'X-App-Token': app.TOKEN})
+    r = urllib.request.Request('http://127.0.0.1:8913/chat', json.dumps(dict({'message': text}, **kw)).encode(), {'Content-Type': 'application/json', 'X-App-Token': app.TOKEN})
     with urllib.request.urlopen(r) as x: return [json.loads(l) for l in x.read().decode().splitlines() if l]
 def scripts(ev):
     return ' '.join(e.get('script', '') for e in ev)

@@ -5,7 +5,7 @@ the usual cause of that kind of error, which tests failed and how many passed. S
 instead of guessing. Understands Python, Java/Kotlin, Node/JavaScript, .NET, Go and Rust traces; pytest, jest, dotnet test and go test summaries."""
 import re
 
-import devtools
+from luna.dev import devtools
 
 MAX_REPORT = 2600
 
