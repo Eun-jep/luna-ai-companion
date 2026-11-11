@@ -5,6 +5,7 @@ from luna import security
 from luna.server.chat import chat_turn, end_task, open_item   # noqa: F401
 from luna.core.prompts import (ACTIONS_FILE, WORK_OFF, library_line, load_actions, DOUBT, LANGS, LAST_USER, NOOK_RULES, PRESENCE_RULES, PROTOCOL, SCENES, SUMMARY, WEEKDAYS, system_prompt, time_context)   # noqa: F401
 from luna.server.hands import HandsRoutes
+from luna.server.update import UpdateRoutes
 from luna.core.session import S   # noqa: F401  (tests set app.S.agent)
 from luna.core.script import (BOUNDARY_RE, clean_script, CYRILLIC_RE, EMOJI_RE, EMOTIONS, FOREIGN_RE, GESTURES, HANGUL_RE, JA_RE, JA_VOICE, LOOK_TARGETS, MAX_MESSAGE, MAX_STORED, MIN_CHUNK, NATIVE_VOICES, parse_plan, parse_script, pick_voice, PLAN_MAX, PLAN_MIN, PLAN_STEP, pull_code, split_ready, tts_clean, TTS_VOICE, VALID_TAGS)   # noqa: F401  (pure helpers: stage directions, voice choice, sentence cutting; some are re-exported for the tests)
 from luna.core.models import list_models, parameter_labels   # noqa: F401  (the Live2D models on disk; re-exported for the tests)
@@ -414,7 +415,7 @@ def with_libs(html):
     return html
 
 
-class Handler(HandsRoutes, BaseHTTPRequestHandler):
+class Handler(HandsRoutes, UpdateRoutes, BaseHTTPRequestHandler):
     def log_message(self, *args):
         pass  # Do not log messages or credentials.
 
@@ -477,7 +478,7 @@ class Handler(HandsRoutes, BaseHTTPRequestHandler):
             return
         if not security.token_ok(self.headers.get('X-App-Token'), TOKEN):
             return self.send(403, {'error': 'Forbidden'})
-        if self.path not in ('/chat', '/reset', '/forget', '/tts', '/act', '/state', '/agent/start', '/agent/step', '/agent/do', '/agent/stop', '/unreal/run', '/godot/run', '/unity/run', '/code/read', '/code/scan', '/git/diff', '/sql/run', '/env/run', '/code/edit', '/project/make', '/project/ws', '/doc/read', '/doc/move', '/doc/make', '/care/due', '/reminder/due', '/hear', '/listen', '/run/go', '/run/again', '/stream/start', '/stream/stop', '/stream/say', '/stream/event', '/stream/status') and not self.path.startswith(('/provider/', '/journal/', '/studio/', '/nook/')):
+        if self.path not in ('/chat', '/reset', '/forget', '/tts', '/act', '/state', '/agent/start', '/agent/step', '/agent/do', '/agent/stop', '/unreal/run', '/godot/run', '/unity/run', '/code/read', '/code/scan', '/git/diff', '/sql/run', '/env/run', '/code/edit', '/project/make', '/project/ws', '/doc/read', '/doc/move', '/doc/make', '/care/due', '/reminder/due', '/hear', '/listen', '/run/go', '/run/again', '/stream/start', '/stream/stop', '/stream/say', '/stream/event', '/stream/status') and not self.path.startswith(('/provider/', '/journal/', '/studio/', '/nook/', '/update/')):
             return self.send(404, {'error': 'Not found'})
         if self.path == '/tts':
             return self.handle_tts()
@@ -536,6 +537,8 @@ class Handler(HandsRoutes, BaseHTTPRequestHandler):
             return self.send(200, {'due': character.care_due()})
         if self.path.startswith('/provider/'):
             return self.handle_provider()
+        if self.path.startswith('/update/'):
+            return self.handle_update()
         if self.path.startswith('/journal/'):
             return self.handle_journal()
         if self.path.startswith('/nook/'):

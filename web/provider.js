@@ -26,7 +26,7 @@ const SERVER_ERR = [
 function fixErr(message) {
   const known = SERVER_ERR.find(([ru]) => (message || '').startsWith(ru));
   if (known) return t(known[1]);
-  const m = /^(prov|doc|journal|edit|project):(\w+)(?:\|(.*))?$/s.exec(message || '');
+  const m = /^(prov|doc|journal|edit|project|update):(\w+)(?:\|(.*))?$/s.exec(message || '');
   if (!m) return message;
   const text = t(m[1] + '.err.' + m[2]);
   return text + (m[3] ? ' (' + m[3] + ')' : '');

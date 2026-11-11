@@ -81,6 +81,11 @@
         <button type="button" id="prov-scan" class="wide" data-i18n="prov.scan">Look for local networks</button>
         <button type="button" id="wizard-open" class="wide" data-i18n="wz.open">Setup guide</button>
       </section>
+      <section id="upd-box">
+        <h4 data-i18n="upd.title">Updates</h4>
+        <p id="upd-status" class="hint" role="status"></p>
+        <div class="row"><button type="button" id="upd-check" data-i18n="upd.check">Check for updates</button><button type="button" id="upd-install" class="primary" hidden data-i18n="upd.install">Install</button><button type="button" id="upd-rollback" hidden data-i18n="upd.rollback">Roll back</button></div>
+      </section>
 
       <section class="group">
         <h3 data-i18n="g.character">Character</h3>
@@ -213,6 +218,7 @@
 <script src="/web/app.js"></script>
 <script src="/web/provider.js"></script>
 <script src="/web/wizard.js"></script>
+<script src="/web/update.js"></script>
 <script src="/web/journal.js"></script>
 <script src="/web/nook.js"></script>
 <script src="/web/workspaces.js"></script>
