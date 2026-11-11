@@ -18,7 +18,7 @@ ROOT = Path(__file__).resolve().parent   # the program folder (code, web page, m
 
 # names of the files and folders that used to live next to the program and now live in DATA_DIR
 LEGACY = ('memory.json', 'memory-backups', 'journal.jsonl', 'keys.dat', 'providers.json', 'ui-state.json', 'actions.json',
-          'edit_backups', 'songs', 'habits.json', 'manners.json', 'lists.json', 'standup.json', 'settings.local.json')
+          'edit_backups', 'songs', 'project_manifests', 'workspaces.json', 'habits.json', 'manners.json', 'lists.json', 'standup.json', 'settings.local.json')
 
 
 def under_test():
@@ -47,6 +47,18 @@ except OSError:
 def data_file(name):
     """The place of one data file or folder (not created)."""
     return DATA_DIR / name
+
+
+def seed(name, template):
+    """Give a first-run copy of a template file (shipped with the program) to the data folder if the user has no such file yet."""
+    target, template = DATA_DIR / name, Path(template)
+    if not target.exists() and template.is_file():
+        try:
+            shutil.copyfile(template, target)
+            return True
+        except OSError:
+            return False
+    return False
 
 
 def migrate(source=ROOT, target=None):

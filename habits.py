@@ -3,6 +3,7 @@
 numbers in a bracketed note; she only retells it, warmly. A broken streak is never a reproach: the note tells her to support him, not to scold.
 Everything stays in habits.json next to the program (nothing is sent anywhere). One habit can be dropped at his word; there is no "wipe everything".
 In ru, en, ko and ja."""
+import paths
 import json
 import os
 import re
@@ -19,10 +20,7 @@ MILESTONES = (3, 7, 14, 21, 30, 50, 100, 200, 365)
 
 
 def _file():
-    """The real habits.json, except under a test script (tests act as if he asked and must not write into his habits)."""
-    if os.path.basename(sys.argv[0] if sys.argv else '').startswith('test_') or os.environ.get('LUNA_TEST'):
-        return Path(tempfile.mkdtemp(prefix='luna-habits-')) / 'habits.json'
-    return Path(__file__).resolve().parent / 'habits.json'
+    return paths.data_file('habits.json')
 
 
 FILE = _file()

@@ -2,6 +2,7 @@
 "買い物リストに牛乳を追加". The program reads the request, changes the list and tells her what it did; she only retells it. Everything stays in lists.json
 next to the program (nothing is sent anywhere). Adding, removing one item and reading the list are done at once because he asked in words; wiping a whole
 list is NOT done by her: she says so and he removes the items himself. In ru, en, ko and ja."""
+import paths
 import json
 import os
 import re
@@ -16,10 +17,7 @@ MAX_LEN = 60           # characters of an item
 
 
 def _file():
-    """The real lists.json, except under a test script (the tests act as if he asked, and must not write into his lists)."""
-    if os.path.basename(sys.argv[0] if sys.argv else '').startswith('test_') or os.environ.get('LUNA_TEST'):
-        return Path(tempfile.mkdtemp(prefix='luna-lists-')) / 'lists.json'
-    return Path(__file__).resolve().parent / 'lists.json'
+    return paths.data_file('lists.json')
 
 
 FILE = _file()

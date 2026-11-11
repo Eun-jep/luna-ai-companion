@@ -13,17 +13,14 @@ from pathlib import Path
 import codeedit
 import docfiles
 import office
+import paths
 import projects
 import unreal_bridge
 
 def _journal_file():
     """The real journal, except when a test script is running: tests act as if she did things (keys, documents, scans) and must never
     write into, or push real entries out of, the journal of what she really did. A test gets its own temporary file."""
-    import sys
-    import tempfile
-    if os.path.basename(sys.argv[0] if sys.argv else '').startswith('test_') or os.environ.get('LUNA_TEST'):
-        return Path(tempfile.mkdtemp(prefix='luna-journal-')) / 'journal.jsonl'
-    return Path(__file__).resolve().parent / 'journal.jsonl'
+    return paths.data_file('journal.jsonl')   # under a test paths.py gives a throw-away folder
 
 
 FILE = _journal_file()

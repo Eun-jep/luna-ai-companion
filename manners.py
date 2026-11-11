@@ -3,6 +3,7 @@
 says "говори как обычно" / "back to normal" / "원래대로" / "いつも通りに"; without it the request holds for this reply only, so one "объясни простыми словами" does not rewrite her for good.
 A nickname is always kept (that is what asking for one means). Nothing here makes her colder: it is his steering of her manner, and her own character stays under it.
 Only his own words count: the app never calls this for text that came from the internet."""
+import paths
 import json
 import os
 import re
@@ -13,9 +14,7 @@ from pathlib import Path
 
 
 def _file():
-    if os.path.basename(sys.argv[0] if sys.argv else '').startswith('test_') or os.environ.get('LUNA_TEST'):
-        return Path(tempfile.mkdtemp(prefix='luna-manners-')) / 'manners.json'
-    return Path(__file__).resolve().parent / 'manners.json'
+    return paths.data_file('manners.json')
 
 
 FILE = _file()

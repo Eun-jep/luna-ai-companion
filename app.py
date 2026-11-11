@@ -1,5 +1,6 @@
 """Local companion: Live2D avatar + chat + speech. Server needs only the Python stdlib
 for chat; speech synthesis uses the optional `edge-tts` package."""
+import paths
 import asyncio
 import itertools
 import json
@@ -99,8 +100,8 @@ def speech_vocab():
     return list(dict.fromkeys(words))[:400]
 
 
-ACTIONS_FILE = ROOT / 'actions.json'
-STATE_FILE = ROOT / 'ui-state.json'   # window settings and her place on the screen: the same at every launch
+ACTIONS_FILE = paths.data_file('actions.json')
+STATE_FILE = paths.data_file('ui-state.json')   # window settings and her place on the screen: the same at every launch
 PENDING = {}          # id -> time she asked for it; /act accepts only what she actually asked for, once
 from agent import ACT_RE
 import agent
@@ -2019,8 +2020,10 @@ def start_study():
 
 if __name__ == '__main__':
     print('Companion v0.8 — chat with the network you choose in the settings + edge-tts voice. Messages go to that service / Microsoft TTS.')
-    print('Long-term memory is stored in memory.json next to the app (delete the file or use the settings button to forget).')
+    print('Long-term memory is stored in %s (use the settings button to forget).' % (paths.DATA_DIR / 'memory.json'))
     print('The neural network and its key are chosen in the settings (the key is stored encrypted, never shown again).')
+    paths.migrate()                                   # data that an older version kept next to the program moves to %APPDATA%\Luna
+    paths.seed('actions.json', ROOT / 'actions.example.json')
     providers.load()
     load_memory()
     start_study()

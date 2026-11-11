@@ -5,7 +5,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import manners
 ok = lambda n, c: print(('PASS ' if c else 'FAIL ') + n)
 
-ok('sandboxed under tests', 'luna-manners-' in str(manners.FILE))
+ok('sandboxed under tests', 'luna-data-' in str(manners.FILE))
 
 
 def reset():

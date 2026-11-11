@@ -6,7 +6,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import habits
 ok = lambda n, c: print(('PASS ' if c else 'FAIL ') + n)
 
-ok('sandboxed under tests', 'luna-habits-' in str(habits.FILE))
+ok('sandboxed under tests', 'luna-data-' in str(habits.FILE))
 
 for text, kind, name in [('заведи привычку зарядка', 'start', 'зарядка'), ('добавь привычку пить воду', 'start', 'пить воду'),
                          ('track a habit: reading', 'start', 'reading'), ('start tracking my running habit', 'start', 'running'),

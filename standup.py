@@ -1,11 +1,12 @@
 """The daily stand-up she keeps with him in work mode: what he did yesterday, what he plans today, what blocks him.
 Notes stay in standup.json next to the program; she writes one only after he has told her, and says so."""
+import paths
 import json
 import os
 import re
 import time
 
-FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'standup.json')
+FILE = str(paths.data_file('standup.json'))
 KEEP, ITEMS, ITEM_LEN = 60, 8, 200
 FIELDS = (('yesterday', 'вчера'), ('today', 'сегодня'), ('blockers', 'блокеры'))
 

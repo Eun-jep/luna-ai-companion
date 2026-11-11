@@ -12,8 +12,9 @@ import time
 from pathlib import Path
 
 import devtools
+import paths
 
-BACKUPS = Path(__file__).resolve().parent / 'edit_backups'
+BACKUPS = paths.data_file('edit_backups')
 KEEP_BACKUPS = 60
 TTL, MAX_PENDING, MAX_EDITS = 600, 10, 12
 MAX_FIND, MAX_REPLACE, MAX_SPEC = 6000, 12000, 60000
@@ -146,7 +147,7 @@ def apply(token):
     if _sha(raw) != entry['before']:   # she proposed against another version of the file
         raise RuntimeError('changed')
     try:
-        BACKUPS.mkdir(exist_ok=True)
+        BACKUPS.mkdir(parents=True, exist_ok=True)
         backup = BACKUPS / ('%d_%s' % (int(now), entry['name']))
         backup.write_bytes(raw)
         _atomic(path, entry['data'])

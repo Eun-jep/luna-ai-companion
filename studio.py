@@ -3,13 +3,14 @@
 Files live in songs/ under names the program makes up (never a name that came from outside), the list in songs/library.json.
 Only audio is accepted (checked by the file's first bytes, not by its name), at most MAX_BYTES each and MAX_SONGS in all.
 Tempo and length come from the page, which decodes the audio. Pure standard library."""
+import paths
 import json
 import re
 import secrets
 import time
 from pathlib import Path
 
-DIR = Path(__file__).resolve().parent / 'songs'
+DIR = paths.data_file('songs')
 INDEX = DIR / 'library.json'
 MAX_BYTES = 80 << 20
 MAX_SONGS = 60
@@ -41,7 +42,7 @@ def load():
 
 
 def _save(songs):
-    DIR.mkdir(exist_ok=True)
+    DIR.mkdir(parents=True, exist_ok=True)
     INDEX.write_text(json.dumps(songs, ensure_ascii=False, indent=1), encoding='utf-8')
 
 
@@ -63,7 +64,7 @@ def add(name, data, her=False):
     if len(songs) >= MAX_SONGS:
         raise ValueError('full')
     sid = secrets.token_hex(6)
-    DIR.mkdir(exist_ok=True)
+    DIR.mkdir(parents=True, exist_ok=True)
     (DIR / (sid + EXT[fmt])).write_bytes(bytes(data))
     entry = {'id': sid, 'title': clean_title(name), 'ext': EXT[fmt], 'bpm': 0, 'secs': 0, 'added': int(time.time())}
     if her:

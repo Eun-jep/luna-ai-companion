@@ -4,6 +4,7 @@ the service, and stored encrypted for this Windows user (DPAPI) in keys.dat, so 
 Local runtimes (Ollama, LM Studio, Jan, llama.cpp server) are found by looking at the loopback ports and install folders.
 Everything speaks the OpenAI chat-completions protocol. The page never gets a key back, only the last four characters.
 Errors travel as codes ('prov:badkey|detail') that the page translates into the interface language."""
+import paths
 import base64
 import ctypes
 import json
@@ -17,8 +18,8 @@ from ctypes import wintypes
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
-CHOICE_FILE = ROOT / 'providers.json'   # which one is active and which model: no secrets
-KEYS_FILE = ROOT / 'keys.dat'           # the keys, encrypted for this Windows user
+CHOICE_FILE = paths.data_file('providers.json')   # which one is active and which model: no secrets
+KEYS_FILE = paths.data_file('keys.dat')         # the keys, encrypted for this Windows user
 _lock = threading.RLock()
 
 CLOUD = {

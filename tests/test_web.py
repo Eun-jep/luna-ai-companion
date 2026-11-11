@@ -69,6 +69,7 @@ ok('resolve: nothing', netsearch.resolve_site('') is None)
 
 # ---- in the conversation ----
 import app, character, audit, agent
+import paths; paths.seed('actions.json', os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'actions.example.json'))   # a test list of openable things, never the user's own
 real_research = netsearch.research
 character.MEMORY_FILE = pathlib.Path(tempfile.mkdtemp()) / 'memory.json'; app.load_memory()
 audit.FILE = pathlib.Path(tempfile.mkdtemp()) / 'journal.jsonl'

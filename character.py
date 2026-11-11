@@ -9,6 +9,7 @@ What the host calls:
   mood_from_script(text)            her own emotion tags in a reply nudge the mood
   save_memory(), update_memory(recent), reflect(), research()   keep, learn, think back, read up (the last three use `llm`)
 State: MEMORY (dict, saved to memory.json), HISTORY (the last turns of the talk), AWAY (time since the last meeting)."""
+import paths
 import datetime
 import json
 import re
@@ -26,7 +27,7 @@ HISTORY = []
 llm = None            # set by the host: llm(messages) -> str
 TAG_RE = re.compile(r'\[(\w+)(?::(\w+))?\]')   # stage directions like [happy] or [look:user]
 NOTE = '[служебная заметка, не слова создателя] '   # prefix of the host's own hints: never taken for the creator's words
-MEMORY_FILE = ROOT / 'memory.json'
+MEMORY_FILE = paths.data_file('memory.json')   # outside the program folder (see paths.py)
 MEMORY_LIMIT = 30     # facts kept per list
 RECALL_K = 10         # facts per list that go into the prompt (the most fitting ones)
 KEEP_FREE = 3         # a full list is trimmed by forgetting the stalest facts down to LIMIT - KEEP_FREE

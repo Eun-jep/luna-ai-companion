@@ -1,0 +1,12 @@
+{
+  "_help": "Список того, что Луна МОЖЕТ открывать по твоей просьбе. Ничего вне списка она открыть не сможет. kind: url (сайт, http/https) или app (программа, файл или ссылка вроде steam://rungameid/ID). Добавляй свои записи по образцу; id — латиницей/цифрами/подчёркиванием.",
+  "actions": [
+    {"id": "google", "label": "Google", "kind": "url", "target": "https://www.google.com", "about": "поисковик"},
+    {"id": "youtube", "label": "YouTube", "kind": "url", "target": "https://www.youtube.com", "about": "видео"},
+    {"id": "github", "label": "GitHub", "kind": "url", "target": "https://github.com", "about": "код"},
+    {"id": "translate", "label": "Google Translate", "kind": "url", "target": "https://translate.google.com", "about": "переводчик"},
+    {"id": "calculator", "label": "Калькулятор", "kind": "app", "target": "calc.exe", "about": "калькулятор"},
+    {"id": "notepad", "label": "Блокнот", "kind": "app", "target": "notepad.exe", "about": "блокнот"},
+    {"id": "explorer", "label": "Проводник", "kind": "app", "target": "explorer.exe", "about": "папки и файлы"}
+  ]
+}

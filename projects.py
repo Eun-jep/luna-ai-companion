@@ -3,6 +3,7 @@ only then the files appear, inside one sandbox folder (Documents\\Luna\\Projects
 outside the sandbox, overwrite or delete an existing file, create programs or scripts that start by a double click, or write
 secret files. Every project is written to the journal with a manifest, so the Journal can take it back (only while the files
 are still exactly what she wrote)."""
+import paths
 import hashlib
 import json
 import os
@@ -15,7 +16,7 @@ from pathlib import Path
 import devtools
 
 HERE = Path(__file__).resolve().parent
-MANIFESTS = HERE / 'project_manifests'
+MANIFESTS = paths.data_file('project_manifests')
 ROOT = None                      # tests point this elsewhere
 TTL, MAX_PENDING = 600, 6
 MAX_SPEC, MAX_FILES, MAX_FILE, MAX_TOTAL, MAX_DEPTH = 400000, 40, 120000, 600000, 6
@@ -108,7 +109,7 @@ def parse(src):
 
 
 # ---- folders the creator allowed (off until he adds one): she may add NEW files to a project that lives there ----
-WS_FILE = HERE / 'workspaces.json'
+WS_FILE = paths.data_file('workspaces.json')
 WS_LIMIT = 8
 SYSTEM_DIRS = ('windows', 'program files', 'program files (x86)', 'programdata', 'appdata', '$recycle.bin', 'system volume information')
 
