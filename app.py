@@ -154,6 +154,7 @@ import songid
 hearing.VOCAB_SOURCE = lambda: speech_vocab()   # the recognizer prefers his own names and titles
 from character import (HISTORY, MEMORY, MEMORY_LIMIT, MEMORY_EVERY, REFLECT_EVERY, MOOD_BASE, NOTE, TAG_RE, load_memory, save_memory,
                        mood_now, mood_from_script, describe_mood, update_memory, reflect)
+character.use_embeddings(CONFIG.get('embeddings'))   # optional: "embeddings": "ollama:nomic-embed-text" in settings.json (meaning-based recall)
 character.llm = lambda messages: generate(messages)   # the character thinks through whichever network is chosen
 AGENT = False
 WORK = False          # work mode: code, commands, projects, engines, documents (off for everyday talk)

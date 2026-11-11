@@ -345,18 +345,38 @@ def stat(fact):
     return MEMORY['stats'].setdefault(fact, {'t': time.time(), 'used': 0, 'n': 0})
 
 
+def use_embeddings(spec):
+    """Meaning-based recall with a local embedding model: spec 'ollama:nomic-embed-text' (settings.json key "embeddings"); anything else
+    switches back to the offline word-form match. The vectors are cached next to the memory, nothing leaves the computer."""
+    import memory_store
+    if isinstance(spec, str) and spec.startswith('ollama:') and len(spec) > 7:
+        try:
+            memory_store.configure_cache(paths.data_file('memory-index.db'))
+            memory_store.set_embedder(*memory_store.ollama_embedder(model=spec[7:]))
+            return True
+        except ValueError:
+            pass
+    memory_store.set_embedder(None, None)
+    return False
+
+
+
 def recall(key, query, k=RECALL_K):
-    """The k facts of a list that fit the conversation best: word overlap with what is being talked about, a little
-    for fresh ones and for those she keeps coming back to. Facts that match count as «used» (not forgotten soon)."""
+    """The k facts of a list that fit the conversation best: word overlap with what is being talked about (also other forms of the same
+    word, and the meaning when an embedding model is set), a little for fresh ones and for those she keeps coming back to.
+    Facts that match count as «used» (not forgotten soon)."""
+    import memory_store
     items = MEMORY[key]
     words, now = stem(query), time.time()
     if len(items) <= k:
         chosen = items
     else:
+        close = memory_store.similarities(query, items)
+
         def score(i):
             st = stat(items[i])
             fresh = 0.5 ** ((now - max(st['t'], st['used'])) / (14 * 86400))
-            return 3 * len(words & stem(items[i])) + fresh + min(st['n'], 5) * 0.1 + i / len(items) * 0.2
+            return 3 * len(words & stem(items[i])) + 4 * close[i] + fresh + min(st['n'], 5) * 0.1 + i / len(items) * 0.2
         top = sorted(range(len(items)), key=score, reverse=True)[:k]
         chosen = [items[i] for i in sorted(top)]
     for fact in chosen:
