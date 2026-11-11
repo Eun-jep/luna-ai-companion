@@ -4,7 +4,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 JS = (ROOT / 'web' / 'app.js').read_text(encoding='utf-8')
-PY = (ROOT / 'app.py').read_text(encoding='utf-8')
+PY = (ROOT / 'app.py').read_text(encoding='utf-8') + (ROOT / 'luna' / 'server' / 'hands.py').read_text(encoding='utf-8')
 
 
 def body(name):
