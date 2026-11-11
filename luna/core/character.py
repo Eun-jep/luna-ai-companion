@@ -349,10 +349,12 @@ def use_embeddings(spec):
     """Meaning-based recall with a local embedding model: spec 'ollama:nomic-embed-text' (settings.json key "embeddings"); anything else
     switches back to the offline word-form match. The vectors are cached next to the memory, nothing leaves the computer."""
     from luna.core import memory_store
+    feeling.reset()
     if isinstance(spec, str) and spec.startswith('ollama:') and len(spec) > 7:
         try:
             memory_store.configure_cache(paths.data_file('memory-index.db'))
             memory_store.set_embedder(*memory_store.ollama_embedder(model=spec[7:]))
+            feeling.warm(spec)   # the tone examples are embedded in the background
             return True
         except ValueError:
             pass
@@ -820,7 +822,7 @@ def care_note(dated_only=False):
 
 # ---- a person, not a servant: her own opinion, hurt feelings, thanks, and reading the creator's tone ----
 HURT_FOR = 3 * 3600   # how long an offence is felt
-from luna.core import lexicon
+from luna.core import feeling, lexicon
 TONES = [(name, lexicon.rx('tone_' + name)) for name in lexicon.TONE_ORDER]   # checked in this order: the first that matches is the tone
 TONE_MOOD = {'rude': (-0.25, 0.05), 'sorry': (0.2, 0), 'thanks': (0.15, 0.05), 'sad': (-0.05, -0.05), 'angry': (-0.03, 0.03),
              'sick': (-0.04, -0.03), 'tired': (0, -0.03), 'happy': (0.08, 0.05)}
@@ -889,6 +891,11 @@ def sense(text):
     """Tone of the creator's message: '' or one of TONES. It nudges her mood, and an offence is remembered for a while."""
     low = text.lower()
     tone = next((name for name, pattern in TONES if pattern.search(low)), '')
+    if not tone:
+        try:
+            tone = feeling.classify(text)   # by meaning, when a real embedding model is connected; otherwise ''
+        except Exception:   # a feeling that cannot be read must never break the turn
+            tone = ''
     letters = [c for c in text if c.isalpha()]
     if not tone and len(letters) >= 8 and sum(c.isupper() for c in letters) / len(letters) > 0.7:
         tone = 'angry'   # shouting in capitals
