@@ -2,7 +2,7 @@ const $ = s => document.querySelector(s);
 const el = {panel: $('#panel'), head: $('#panel-head'), log: $('#log'), status: $('#status'), form: $('#form'),
   message: $('#message'), send: $('#send'), mic: $('#mic'), model: $('#model'), follow: $('#follow'),
   pitch: $('#pitch'), rate: $('#rate'), volume: $('#volume'), zoom: $('#zoom'), initiative: $('#initiative'), presence: $('#presence'), bargein: $('#bargein'), speak: $('#speak'), lang: $('#lang'), handsfree: $('#handsfree'), bg: $('#bg'),
-  uilang: $('#uilang'), agent: $('#agent'), control: $('#control'), work: $('#work'), confirm: $('#confirm'), drag: $('#drag'), voicenative: $('#voicenative'), camera: $('#camera'), cam: $('#cam'), subtitle: $('#subtitle'), openChat: $('#open-chat')};
+  uilang: $('#uilang'), agent: $('#agent'), control: $('#control'), work: $('#work'), confirm: $('#confirm'), drag: $('#drag'), voicenative: $('#voicenative'), ttsengine: $('#ttsengine'), camera: $('#camera'), cam: $('#cam'), subtitle: $('#subtitle'), openChat: $('#open-chat')};
 
 // ---- settings (per-viewer convenience; app works without storage) ----
 // Settings live in ui-state.json next to the app (the server hands them over with the page): the desktop window gets a new
@@ -19,7 +19,7 @@ function collectState() {
       pitch: el.pitch.value, rate: el.rate.value, volume: el.volume.value, zoom: el.zoom.value, initiative: el.initiative.checked, presence: el.presence.checked, bargein: el.bargein.checked, speak: el.speak.checked, lang: el.lang.value, streamChannel: ($('#stream-channel') || {}).value || '',
       handsfree: el.handsfree.checked, bg: el.bg.value, closed: el.panel.hidden,
       minimized: el.panel.classList.contains('minimized'), anchor, place: avatar.place,
-      ui: uiLang, agent: el.agent.checked, control: el.control.checked, work: el.work.checked, drag: el.drag.checked, voicenative: el.voicenative.checked,
+      ui: uiLang, agent: el.agent.checked, control: el.control.checked, work: el.work.checked, drag: el.drag.checked, voicenative: el.voicenative.checked, ttsengine: el.ttsengine.value,
       hearkeep: !!($('#hearkeep') && $('#hearkeep').checked), hearon: !!($('#hearkeep') && $('#hearkeep').checked && $('#hear') && $('#hear').checked)};
 }
 function persist() {
@@ -114,7 +114,7 @@ async function fetchSpeech(text, emotion = 'neutral') {
   let last;
   for (let attempt = 0; attempt < 2; attempt++) {   // one more try: a sentence that fails once would otherwise only appear as a subtitle
     try {
-      const resp = await api('/tts', {text, pitch: Number(el.pitch.value), rate: Number(el.rate.value), emotion, native: el.voicenative.checked});
+      const resp = await api('/tts', {text, pitch: Number(el.pitch.value), rate: Number(el.rate.value), emotion, native: el.voicenative.checked, engine: el.ttsengine.value});
       const blob = await resp.blob();
       if (blob.size) return URL.createObjectURL(blob);
       last = Error(t('err.audio'));
@@ -1063,6 +1063,7 @@ el.control.addEventListener('change', () => {
 el.presence.addEventListener('change', () => { idleLimit = nextIdle(); persist(); });
 el.bargein.addEventListener('change', persist);
 el.voicenative.addEventListener('change', persist);
+el.ttsengine.addEventListener('change', persist);
 el.drag.addEventListener('change', persist);
 el.uilang.addEventListener('change', () => {
   setUiLang(el.uilang.value);
@@ -1093,6 +1094,7 @@ let models = [];
   el.lang.value = saved.lang || SPEECH_LANG[uiLang];
   warmRecognizer();
   el.voicenative.checked = !!saved.voicenative;
+  el.ttsengine.value = ['edge', 'auto', 'local'].includes(saved.ttsengine) ? saved.ttsengine : 'edge';
   el.drag.checked = saved.drag !== false;
   el.agent.checked = saved.agent !== false;
   el.work.checked = saved.work === true;   // off unless she was asked to work

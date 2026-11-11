@@ -78,7 +78,7 @@ from luna.core import convo
 from luna.hands import nook
 from luna.skills import stream
 from luna.hands import studio
-from luna.senses import hearing
+from luna.senses import hearing, localtts
 from luna.senses import songid
 hearing.VOCAB_SOURCE = lambda: speech_vocab()   # the recognizer prefers his own names and titles
 from luna.core.character import (HISTORY, MEMORY, MEMORY_LIMIT, MOOD_BASE, load_memory, save_memory,
@@ -271,6 +271,22 @@ INITIATIVES['scene'] = 'Только что изменился фон за то�
 
 
 
+
+
+def speak(text, native, rate, pitch, volume, engine='edge'):
+    """-> (audio bytes, mime). engine: 'edge' (cloud voice), 'local' (Windows voices, nothing leaves the computer), 'auto' (cloud, local when the cloud fails)."""
+    if engine != 'local':
+        try:
+            if edge_tts is None:
+                raise RuntimeError('edge-tts is not installed')
+            audio = synthesize(text, pick_voice(text, native), rate, pitch, volume)
+            if audio:
+                return audio, 'audio/mpeg'
+            raise RuntimeError('empty sound')
+        except Exception:
+            if engine != 'auto':
+                raise
+    return localtts.synthesize(text, rate, volume), 'audio/wav'
 
 
 def synthesize(text, voice, rate=0, pitch=0, volume=0):
@@ -742,7 +758,10 @@ class Handler(HandsRoutes, UpdateRoutes, BaseHTTPRequestHandler):
             hearing.mute(len(text) * 0.09 + 6)   # her own voice will come out of the speakers: it must not count as heard
             hearing.said(text)                   # ... and if the microphone catches it anyway, it is not taken for him
             emotion, native = data.get('emotion'), data.get('native') is True
-            if edge_tts is None:
+            engine = data.get('engine', 'edge')
+            if engine not in ('edge', 'local', 'auto'):
+                return self.send(400, {'error': 'Некорректный запрос озвучки.'})
+            if edge_tts is None and engine == 'edge':
                 return self.send(501, {'error': 'Не установлен edge-tts: выполни py -m pip install edge-tts'})
             # intonation: her emotion on this line, her mood now, the time of day and the sentence itself (see voice.py)
             if data.get('plain') is True:   # one syllable of a song: said flat, the page gives it its note
@@ -752,10 +771,12 @@ class Handler(HandsRoutes, UpdateRoutes, BaseHTTPRequestHandler):
                                      mood_now(), datetime.now().hour)
             spoken = shaped['text']
             rate, pitch = voice.CLAMP('rate', rate + shaped['rate']), voice.CLAMP('pitch', pitch + shaped['pitch'])
-            audio = synthesize(spoken, pick_voice(spoken, native), rate, pitch, shaped['volume'])
+            audio, mime = speak(spoken, native, rate, pitch, shaped['volume'], engine)
             if not audio:
                 return self.send(502, {'error': 'Сервис озвучки вернул пустой звук.'})
-            self.send(200, audio, 'audio/mpeg')
+            self.send(200, audio, mime)
+        except localtts.LocalVoiceError as exc:
+            self.send(501 if str(exc) in ('novoice', 'windows') else 502, {'error': 'Локальный голос недоступен: %s' % exc})
         except (ValueError, TypeError):
             self.send(400, {'error': 'Некорректный запрос озвучки.'})
         except Exception as exc:
