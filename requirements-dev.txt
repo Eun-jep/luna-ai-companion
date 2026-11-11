@@ -4,3 +4,4 @@ pytest-cov>=5
 pytest-xdist>=3.5      # параллельный запуск старых скриптовых тестов: pytest -n auto
 ruff>=0.6
 mypy>=1.10
+playwright>=1.40   # e2e tests (uses the installed Edge; no browser download)
