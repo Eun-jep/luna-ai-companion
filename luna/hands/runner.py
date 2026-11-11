@@ -8,11 +8,11 @@ import os
 import re
 import secrets
 import shutil
-import subprocess
 import time
 from pathlib import Path
 
 from luna.dev import devtools
+from luna.hands import sandbox
 
 TTL = 120
 TIMEOUT = 90
@@ -31,9 +31,21 @@ TOOLS = {
 }
 BAD_CHARS = re.compile(r'[&|<>;`$%^\n\r\x00]')
 BAD_ARGS = re.compile(r'^(-c|-m\s*pip|--exec|-e|--eval|-p|--print)$', re.I)
-SECRET_ENV = re.compile(r'key|token|secret|password|passwd|credential|auth', re.I)
+SECRET_ENV = re.compile(r'key|token|secret|password|passwd|pwd|passphrase|credential|auth|bearer|cookie|session|private|dsn|database_url|connection', re.I)
 MARKERS = ('.git', 'package.json', 'pyproject.toml', 'setup.py', 'requirements.txt', 'Cargo.toml', 'go.mod')
 MARKER_EXT = ('.sln', '.csproj', '.uproject', '.godot')
+
+
+def too_broad(folder):
+    """A drive root, the user's home or its Desktop/Documents/Downloads, or a system folder is not a project: a command is never run there."""
+    try:
+        folder = Path(folder).resolve()
+    except OSError:
+        return True
+    home = Path.home().resolve()
+    system = [Path(os.environ[k]).resolve() for k in ('SystemRoot', 'ProgramFiles', 'ProgramFiles(x86)', 'ProgramData') if os.environ.get(k)]
+    broad = [home, *(home / n for n in ('Desktop', 'Documents', 'Downloads', 'AppData'))]
+    return folder == folder.parent or folder in broad or any(folder == d or d in folder.parents for d in system)
 
 
 def project_dir():
@@ -42,11 +54,15 @@ def project_dir():
     if not shown or time.time() - shown[-1]['t'] > devtools.GRANT_TTL:
         return None
     here = Path(shown[-1]['path']).resolve().parent
+    if too_broad(here):
+        return None
     for d in [here, *list(here.parents)[:6]]:
         try:
             names = os.listdir(d)
         except OSError:
             continue
+        if too_broad(d):
+            break
         if any(m in names for m in MARKERS) or any(n.lower().endswith(MARKER_EXT) for n in names):
             return d
     return here if here.is_dir() else None
@@ -112,14 +128,11 @@ def run(entry):
     if not exe:
         return {'ok': False, 'code': None, 'text': '', 'cmd': ' '.join(args), 'error': 'missing'}
     env = {k: v for k, v in os.environ.items() if not SECRET_ENV.search(k)}
-    try:
-        done = subprocess.run([exe] + args[1:], cwd=cwd, env=env, stdin=subprocess.DEVNULL, capture_output=True, timeout=TIMEOUT,
-                              creationflags=0x08000000 if os.name == 'nt' else 0)
-        out = (done.stdout + done.stderr).decode('utf-8', errors='replace')
-        code, error = done.returncode, ''
-    except subprocess.TimeoutExpired as exc:
-        out = ((exc.stdout or b'') + (exc.stderr or b'')).decode('utf-8', errors='replace')
-        code, error = None, 'timeout'
+    if too_broad(cwd):
+        return {'ok': False, 'code': None, 'text': '', 'cmd': ' '.join(args), 'error': 'failed'}
+    try:   # in a job: limits on processes and memory, the whole tree dies with the command (luna/hands/sandbox.py)
+        code, raw, error = sandbox.run([exe] + args[1:], cwd, env, TIMEOUT)
+        out = raw.decode('utf-8', errors='replace')
     except OSError:
         return {'ok': False, 'code': None, 'text': '', 'cmd': ' '.join(args), 'error': 'failed'}
     out = out.strip()
