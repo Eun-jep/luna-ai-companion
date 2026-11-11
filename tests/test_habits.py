@@ -59,5 +59,5 @@ for k in range(2, 0, -1):
     habits.handle('отметь сон', today=t - timedelta(days=k))
 h = habits.handle('отметь сон', today=t)
 ok('third day in a row is a milestone', 'серия 3' in h and 'круглая серия' in h)
-src = open(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'app.py'), encoding='utf-8').read()
+src = ''.join(open(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), *f), encoding='utf-8').read() for f in (('app.py',), ('luna', 'server', 'chat.py'), ('luna', 'server', 'hands.py'), ('luna', 'core', 'prompts.py')))
 ok('wired into the chat route', 'habits.handle(text)' in src)

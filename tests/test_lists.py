@@ -58,5 +58,5 @@ ok('the real file is never the test file', pathlib.Path(lists.__file__).resolve(
 
 # the chat route adds the hint, and not after text from the internet
 import app
-src = open(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'app.py'), encoding='utf-8').read()
+src = ''.join(open(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), *f), encoding='utf-8').read() for f in (('app.py',), ('luna', 'server', 'chat.py'), ('luna', 'server', 'hands.py'), ('luna', 'core', 'prompts.py')))
 ok('chat route wired, never after web text', "hint += lists.handle(text)" in src and "data.get('web')" in src[src.index('hint += lists.handle(text)') - 200:src.index('hint += lists.handle(text)')])

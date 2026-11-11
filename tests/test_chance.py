@@ -29,5 +29,5 @@ ok('pick chooses only from the options and can reach each', picked == {'a', 'b',
 chance.RNG = type('R', (), {'choice': lambda s, seq: seq[0], 'randint': lambda s, a, b: b})()
 h = chance.hint('выбери: пицца или суши')
 ok('the hint carries the real result and forbids changing it', 'пицца' in h and 'не меняй' in h)
-src = open(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'app.py'), encoding='utf-8').read()
+src = ''.join(open(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), *f), encoding='utf-8').read() for f in (('app.py',), ('luna', 'server', 'chat.py'), ('luna', 'server', 'hands.py'), ('luna', 'core', 'prompts.py')))
 ok('wired into the chat route', 'chance.hint(text)' in src)

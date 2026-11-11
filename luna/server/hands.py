@@ -1,7 +1,6 @@
 """HTTP routes of her hands (documents, code, projects, commands, engines, providers, journal, nook, songs). A mixin of app.Handler: `self.send`,
 `self.read_json` and the guard come from there. Every route works only on a token that a plate gave out and the creator pressed."""
 
-import sys
 from pathlib import Path
 from urllib.parse import unquote
 
@@ -10,12 +9,8 @@ from luna.core import audit, providers
 from luna.dev import codescan, devtools, envdiag, gitdiff, godot_bridge, sqlrun, unity_bridge, unreal_bridge
 from luna.hands import codeedit, control, docfiles, nook, office, projects, runner, studio
 from luna.senses import hearing
+from luna.server.appref import _app
 
-
-def _app():
-    """The running application module (app.py is `__main__` when started by hand, `app` when imported): late-bound, so that what a test patches in it is seen here."""
-    main = sys.modules.get('__main__')
-    return main if hasattr(main, 'Handler') else sys.modules['app']
 
 
 class HandsRoutes:

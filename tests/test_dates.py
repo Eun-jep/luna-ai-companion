@@ -47,5 +47,5 @@ for q in ['сколько дней до отпуска', 'напомни чер�
     ok('silent: ' + q, h(q) == '')
 ok('weekday and today are in every answer', 'Сегодня 6 ноября 2026 (пятница)' in h('сколько дней до 1 января'))
 ok('the note forbids recounting', 'не пересчитывай' in h('сколько дней до 1 января'))
-src = open(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'app.py'), encoding='utf-8').read()
+src = ''.join(open(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), *f), encoding='utf-8').read() for f in (('app.py',), ('luna', 'server', 'chat.py'), ('luna', 'server', 'hands.py'), ('luna', 'core', 'prompts.py')))
 ok('wired into the chat route', 'dates.handle(text)' in src)

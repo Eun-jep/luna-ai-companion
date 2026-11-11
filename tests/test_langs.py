@@ -144,7 +144,7 @@ ok('plain talk gets neither', 'прощается' not in h and 'здорова�
 import re as _re
 _i18n = open(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'web', 'i18n.js'), encoding='utf-8').read()
 _prov = open(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'web', 'provider.js'), encoding='utf-8').read()
-_app = open(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'app.py'), encoding='utf-8').read() + open(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'luna', 'server', 'hands.py'), encoding='utf-8').read()
+_app = ''.join(open(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), *f), encoding='utf-8').read() for f in (('app.py',), ('luna', 'server', 'chat.py'), ('luna', 'server', 'hands.py'), ('luna', 'core', 'prompts.py'))) + open(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'luna', 'server', 'hands.py'), encoding='utf-8').read() + open(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'luna', 'server', 'chat.py'), encoding='utf-8').read() + open(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'luna', 'core', 'prompts.py'), encoding='utf-8').read()
 _pairs = _re.findall(r"\[\s*'([^']+)',\s*'(srv\.\w+)'\s*\]", _prov)
 ok('the error table is not empty', len(_pairs) >= 12)
 for _ru, _key in _pairs:

@@ -29,5 +29,5 @@ for q in ['у меня 3 яблока плюс 2 груши', 'я купил 17 
     ok('silent: ' + q, mathtalk.answer(q) is None and mathtalk.hint(q) == '')
 h = mathtalk.hint('сколько будет 17 умножить на 23')
 ok('the note carries the number and forbids recounting', '391' in h and 'не пересчитывай' in h)
-src = open(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'app.py'), encoding='utf-8').read()
+src = ''.join(open(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), *f), encoding='utf-8').read() for f in (('app.py',), ('luna', 'server', 'chat.py'), ('luna', 'server', 'hands.py'), ('luna', 'core', 'prompts.py')))
 ok('wired into the chat route', 'mathtalk.hint(text)' in src)
