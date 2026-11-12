@@ -1141,6 +1141,9 @@ if (DESKTOP) {
     if (agentRun) { setInteractive(!!t && !!t.closest?.('#hud,#confirm')); return; }
     setInteractive(!!t && (overUi(t) || (t.tagName === 'CANVAS' && avatar.opaqueAt(e.clientX, e.clientY))));
   });
+  // a modal wizard covers the whole screen: take the mouse the moment it opens, without waiting for a pointer move to be forwarded
+  new MutationObserver(() => setInteractive(!$('#wizard').hidden)).observe($('#wizard'), {attributes: true, attributeFilter: ['hidden']});
+  if (!$('#wizard').hidden) setInteractive(true);
   document.addEventListener('mouseleave', () => { if (!dragging) setInteractive(false); });
   $('#stage').addEventListener('pointerdown', e => {
     if (!el.drag.checked || !avatar.opaqueAt(e.clientX, e.clientY)) return;
