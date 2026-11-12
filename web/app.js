@@ -1129,7 +1129,7 @@ if (DESKTOP) {
   // The window covers the screen; clicks pass through everywhere except Luna's pixels and the interface.
   let interactive = false, dragging = null;
   const setInteractive = on => { if (on !== interactive) { interactive = on; window.desktop.setInteractive(on); } };
-  const overUi = t => !!t.closest?.('#panel,#open-chat,#cam,#confirm,#keybox,#diffbox');
+  const overUi = t => !!t.closest?.('#panel,#open-chat,#cam,#confirm,#keybox,#diffbox,#wizard');
   addEventListener('pointermove', e => {
     if (dragging) {
       avatar.setPlace(dragging.px + (e.clientX - dragging.x) / innerWidth, dragging.py + (e.clientY - dragging.y) / innerHeight);
