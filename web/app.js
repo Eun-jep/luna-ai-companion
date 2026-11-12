@@ -1128,7 +1128,11 @@ if (DESKTOP) {
 
   // The window covers the screen; clicks pass through everywhere except Luna's pixels and the interface.
   let interactive = false, dragging = null;
-  const setInteractive = on => { if (on !== interactive) { interactive = on; window.desktop.setInteractive(on); } };
+  // while the full-screen wizard is open the mouse is always hers (a mouseleave or a lost pointer move must not hand it back to the programs underneath); re-sent each time, never deduplicated
+  const setInteractive = on => {
+    if (!$('#wizard').hidden) { interactive = true; window.desktop.setInteractive(true); return; }
+    if (on !== interactive) { interactive = on; window.desktop.setInteractive(on); }
+  };
   const overUi = t => !!t.closest?.('#panel,#open-chat,#cam,#confirm,#keybox,#diffbox,#wizard');
   addEventListener('pointermove', e => {
     if (dragging) {
