@@ -12,7 +12,9 @@ let tray = null;
 
 function startServer() {
   return new Promise((resolve, reject) => {
-    server = spawn('py', ['-u', 'app.py'], {cwd: ROOT, env: {...process.env, COMPANION_NO_BROWSER: '1', PYTHONIOENCODING: 'utf-8'}});
+    // the project's own virtual environment has the libraries (numpy, ...); the system Python usually does not
+    const venvPy = path.join(ROOT, '.venv', 'Scripts', 'python.exe');
+    server = spawn(require('fs').existsSync(venvPy) ? venvPy : 'py', ['-u', 'app.py'], {cwd: ROOT, env: {...process.env, COMPANION_NO_BROWSER: '1', PYTHONIOENCODING: 'utf-8'}});
     let log = '';
     const onData = chunk => {
       log += chunk.toString('utf8');
