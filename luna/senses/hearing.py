@@ -15,7 +15,10 @@ import threading
 import time
 from pathlib import Path
 
-import numpy as np
+try:
+    import numpy as np
+except ImportError:   # hearing is then simply off (available() says so); luna/core/deps.py tells him what to install
+    np = None
 
 SR = 16000
 SECONDS = 7                 # one listen
@@ -53,8 +56,8 @@ LAST = {'t': 0.0, 'kind': 'silence', 'text': '', 'about': ''}
 
 def available():
     """Which of the two pieces are installed: the loopback capture and the recognizer."""
-    return {'capture': importlib.util.find_spec('soundcard') is not None,
-            'asr': importlib.util.find_spec('vosk') is not None}
+    return {'capture': np is not None and importlib.util.find_spec('soundcard') is not None,
+            'asr': np is not None and importlib.util.find_spec('vosk') is not None}
 
 
 def is_private(title):

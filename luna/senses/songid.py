@@ -13,14 +13,17 @@ import re
 import threading
 import wave
 
-import numpy as np
+try:
+    import numpy as np
+except ImportError:   # hearing is then simply off (available() says so); luna/core/deps.py tells him what to install
+    np = None
 
 SR = 16000
 ERROR = ''          # why the last attempt failed (for the log)
 
 
 def available():
-    return importlib.util.find_spec('shazamio') is not None
+    return np is not None and importlib.util.find_spec('shazamio') is not None
 
 
 def wav_bytes(audio, sr=SR):

@@ -1,11 +1,23 @@
 /* Luna on the desktop: a transparent, always-on-top window over the whole screen. The Python server does all the
    thinking; this file only starts it, shows its page, lets clicks pass through empty areas and takes screenshots
    when the page asks for one. */
-const {app, BrowserWindow, desktopCapturer, globalShortcut, ipcMain, Menu, screen, session, Tray} = require('electron');
+const {app, BrowserWindow, desktopCapturer, dialog, globalShortcut, ipcMain, Menu, screen, session, Tray} = require('electron');
 const {spawn} = require('child_process');
+const fs = require('fs');
 const path = require('path');
 
 const ROOT = path.join(__dirname, '..');
+
+// Everything the shell and the server print goes to shell.log next to her data, so "it does not start" always has an answer.
+const LOG = path.join(process.env.APPDATA || require('os').homedir(), 'Luna', 'shell.log');
+function note(text) {
+  try {
+    fs.mkdirSync(path.dirname(LOG), {recursive: true});
+    if (fs.existsSync(LOG) && fs.statSync(LOG).size > 512 * 1024) fs.renameSync(LOG, LOG + '.old');   // never grows without bound
+    fs.appendFileSync(LOG, new Date().toISOString() + ' ' + text.trimEnd() + '\n');
+  } catch { /* a log that cannot be written must not stop her */ }
+}
+process.on('uncaughtException', e => { note('uncaught: ' + (e.stack || e)); });
 let server = null;
 let win = null;
 let tray = null;
@@ -17,6 +29,7 @@ function startServer() {
     server = spawn(require('fs').existsSync(venvPy) ? venvPy : 'py', ['-u', 'app.py'], {cwd: ROOT, env: {...process.env, COMPANION_NO_BROWSER: '1', PYTHONIOENCODING: 'utf-8'}});
     let log = '';
     const onData = chunk => {
+      note('server: ' + chunk.toString('utf8'));
       log += chunk.toString('utf8');
       const m = log.match(/Open:\s*(http:\/\/127\.0\.0\.1:\d+)/);
       if (m) resolve(m[1]);
@@ -120,6 +133,10 @@ app.whenReady().then(async () => {
     await createWindow(await startServer());
   } catch (e) {
     console.error(e.message);
+    note('start failed: ' + e.message);
+    // a window with the reason instead of a console that closes: the missing library, the busy port, whatever the server printed
+    dialog.showErrorBox('Луна не запустилась', e.message + '\n\nПодробности: ' + LOG +
+      (/No module named/.test(e.message) ? '\n\nНе хватает библиотеки. Выполните:  py -m pip install -r requirements.txt' : ''));
     app.quit();
     return;
   }

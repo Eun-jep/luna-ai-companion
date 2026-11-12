@@ -1,6 +1,7 @@
 """Local companion: Live2D avatar + chat + speech. Server needs only the Python stdlib
 for chat; speech synthesis uses the optional `edge-tts` package."""
 from luna import paths
+from luna.core import deps
 from luna import security
 from luna.server.chat import chat_turn, end_task, open_item   # noqa: F401
 from luna.core.prompts import (ACTIONS_FILE, WORK_OFF, library_line, load_actions, DOUBT, LANGS, LAST_USER, NOOK_RULES, PRESENCE_RULES, PROTOCOL, SCENES, SUMMARY, WEEKDAYS, system_prompt, time_context)   # noqa: F401
@@ -804,6 +805,9 @@ if __name__ == '__main__':
     print('Companion v0.8 — chat with the network you choose in the settings + edge-tts voice. Messages go to that service / Microsoft TTS.')
     print('Long-term memory is stored in %s (use the settings button to forget).' % (paths.DATA_DIR / 'memory.json'))
     print('The neural network and its key are chosen in the settings (the key is stored encrypted, never shown again).')
+    gaps = deps.report()
+    if gaps:
+        print(gaps)   # plain words and the exact command instead of a crash later
     paths.migrate()                                   # data that an older version kept next to the program moves to %APPDATA%\Luna
     paths.seed('actions.json', ROOT / 'actions.example.json')
     providers.load()
