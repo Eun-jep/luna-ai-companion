@@ -28,9 +28,15 @@ async function updCheck(quiet) {
   $('#upd-check').disabled = false;
 }
 
+function updIdle() {
+  updRender(upd.state.feed ? t('upd.current').replace('{x}', upd.state.current) : t('upd.nofeed').replace('{x}', upd.state.current));
+}
+// the line was composed in the language of that moment: switching language (the wizard does) must redo it
+addEventListener('uilang', () => { if (upd.state && !upd.offer) updIdle(); });
+
 async function updInit() {
   try { upd.state = await updCall('state'); } catch { return; }
-  updRender(upd.state.feed ? t('upd.current').replace('{x}', upd.state.current) : t('upd.nofeed').replace('{x}', upd.state.current));
+  updIdle();
   if (upd.state.feed) updCheck(true);   // one quiet look at the feed per page load; it only reports
 }
 

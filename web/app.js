@@ -11,6 +11,7 @@ const saved = (() => {
   if (window.APP_STATE && Object.keys(window.APP_STATE).length) return window.APP_STATE;
   try { return JSON.parse(localStorage.getItem('companion') || '{}'); } catch { return {}; }
 })();
+const flags = {wizardSeen: !!saved.wizardSeen};   // the first-run wizard appears once; "Setup guide" in the settings opens it again
 let settingsReady = false, saveTimer = null, hearRestoring = false;   // nothing is written before the saved values have been applied
 setUiLang(saved.ui || 'en');   // English by default
 el.uilang.value = uiLang;
@@ -19,7 +20,7 @@ function collectState() {
       pitch: el.pitch.value, rate: el.rate.value, volume: el.volume.value, zoom: el.zoom.value, initiative: el.initiative.checked, presence: el.presence.checked, bargein: el.bargein.checked, speak: el.speak.checked, lang: el.lang.value, streamChannel: ($('#stream-channel') || {}).value || '',
       handsfree: el.handsfree.checked, bg: el.bg.value, closed: el.panel.hidden,
       minimized: el.panel.classList.contains('minimized'), anchor, place: avatar.place,
-      ui: uiLang, agent: el.agent.checked, control: el.control.checked, work: el.work.checked, drag: el.drag.checked, voicenative: el.voicenative.checked, ttsengine: el.ttsengine.value,
+      wizardSeen: flags.wizardSeen, ui: uiLang, agent: el.agent.checked, control: el.control.checked, work: el.work.checked, drag: el.drag.checked, voicenative: el.voicenative.checked, ttsengine: el.ttsengine.value,
       hearkeep: !!($('#hearkeep') && $('#hearkeep').checked), hearon: !!($('#hearkeep') && $('#hearkeep').checked && $('#hear') && $('#hear').checked)};
 }
 function persist() {
@@ -1134,21 +1135,25 @@ if (DESKTOP) {
     if (on !== interactive) { interactive = on; window.desktop.setInteractive(on); }
   };
   const overUi = t => !!t.closest?.('#panel,#open-chat,#cam,#confirm,#keybox,#diffbox,#wizard');
+  const hitTest = (x, y) => {
+    const t = document.elementFromPoint(x, y);
+    // during a task only her stop button takes the mouse: her own clicks must reach the programs underneath
+    if (agentRun) { setInteractive(!!t && !!t.closest?.('#hud,#confirm')); return; }
+    setInteractive(!!t && (overUi(t) || (t.tagName === 'CANVAS' && avatar.opaqueAt(x, y))));
+  };
   addEventListener('pointermove', e => {
     if (dragging) {
       avatar.setPlace(dragging.px + (e.clientX - dragging.x) / innerWidth, dragging.py + (e.clientY - dragging.y) / innerHeight);
       dragging.moved = dragging.moved || Math.abs(e.clientX - dragging.x) + Math.abs(e.clientY - dragging.y) > 4;
       return;
     }
-    const t = document.elementFromPoint(e.clientX, e.clientY);
-    // during a task only her stop button takes the mouse: her own clicks must reach the programs underneath
-    if (agentRun) { setInteractive(!!t && !!t.closest?.('#hud,#confirm')); return; }
-    setInteractive(!!t && (overUi(t) || (t.tagName === 'CANVAS' && avatar.opaqueAt(e.clientX, e.clientY))));
+    hitTest(e.clientX, e.clientY);
   });
+  // the cursor position also arrives from the shell, so a lost mouse move cannot leave the window deaf to clicks
+  window.desktop.onCursor?.(p => { if (!dragging) hitTest(p.x, p.y); });
   // a modal wizard covers the whole screen: take the mouse the moment it opens, without waiting for a pointer move to be forwarded
   new MutationObserver(() => setInteractive(!$('#wizard').hidden)).observe($('#wizard'), {attributes: true, attributeFilter: ['hidden']});
   if (!$('#wizard').hidden) setInteractive(true);
-  document.addEventListener('mouseleave', () => { if (!dragging) setInteractive(false); });
   $('#stage').addEventListener('pointerdown', e => {
     if (!el.drag.checked || !avatar.opaqueAt(e.clientX, e.clientY)) return;
     dragging = {x: e.clientX, y: e.clientY, px: avatar.place.x, py: avatar.place.y, moved: false};

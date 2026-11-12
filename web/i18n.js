@@ -534,4 +534,4 @@ function applyI18n() {
   for (const node of document.querySelectorAll('[data-i18n-title]')) { node.title = t(node.dataset.i18nTitle); node.setAttribute('aria-label', node.title); }
   for (const node of document.querySelectorAll('[data-i18n-ph]')) node.placeholder = t(node.dataset.i18nPh);
 }
-function setUiLang(code) { uiLang = UI_LANGS.includes(code) ? code : 'en'; applyI18n(); }
+function setUiLang(code) { uiLang = UI_LANGS.includes(code) ? code : 'en'; applyI18n(); dispatchEvent(new Event('uilang')); }

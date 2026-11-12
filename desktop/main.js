@@ -43,6 +43,14 @@ async function createWindow(url) {
   await win.loadURL(url);
 }
 
+// The page needs to know where the mouse is even while the window ignores it. Windows forwards those moves unreliably, so the
+// cursor is read here and handed to the page, which decides (as before) whether the point is Luna or her interface.
+setInterval(() => {
+  if (!win || win.isDestroyed() || !win.isVisible()) return;
+  const p = screen.getCursorScreenPoint(), b = win.getContentBounds();
+  win.webContents.send('cursor', {x: p.x - b.x, y: p.y - b.y});
+}, 50);
+
 ipcMain.on('interactive', (_event, on) => { win?.setIgnoreMouseEvents(!on, {forward: true}); });
 ipcMain.on('quit', () => app.quit());
 

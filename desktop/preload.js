@@ -7,6 +7,7 @@ contextBridge.exposeInMainWorld('desktop', {
   title: () => ipcRenderer.invoke('title'),
   quit: () => ipcRenderer.send('quit'),
   wake: () => ipcRenderer.send('wake'),
+  onCursor: callback => ipcRenderer.on('cursor', (_event, p) => callback(p)),
   onStopAgent: callback => ipcRenderer.on('stop-agent', () => callback()),
   onToggleEye: callback => ipcRenderer.on('toggle-eye', () => callback()),
 });
