@@ -5,6 +5,7 @@ from luna.core import character
 from luna.core import convo
 from luna.core import faces
 from luna.core import recall
+from luna.core import replyfeel
 from luna.core.character import (HISTORY, MEMORY, MEMORY_EVERY, REFLECT_EVERY, NOTE, TAG_RE, save_memory,
                        mood_now, mood_from_script, update_memory, reflect)
 from luna.core.models import list_models, parameter_labels   # noqa: F401  (the Live2D models on disk; re-exported for the tests)
@@ -219,6 +220,7 @@ def chat_turn(data):
         'role': 'user', 'content': [{'type': 'image_url', 'image_url': {'url': image}},
                                     {'type': 'text', 'text': user['content'] + hint}]}
     scripts, carry, buffer = [], '', ''
+    model_tagged = False   # the model wrote an [emotion] in this reply: then its tags are the only ones (replyfeel.py fills in only when it wrote none)
     quiet = False
 
     asked = []   # actions she requested this turn: the page will ask the user before anything happens
@@ -251,7 +253,7 @@ def chat_turn(data):
     docs = []   # ```lunadoc blocks: Word / PowerPoint / Excel she proposes, each needs the creator's press
 
     def sentence(piece):
-        nonlocal carry
+        nonlocal carry, model_tagged
         if not stream.ON and not tainted:   # her corner is hers: it works on her own initiative too, but never on the stream or after web text
             for m in nook.NOTE_RE.finditer(piece):
                 if len(jots) < 2:
@@ -335,6 +337,8 @@ def chat_turn(data):
             carry = (carry + ' ' + script).strip()
             return None
         script, carry = (carry + ' ' + script).strip(), ''
+        model_tagged = model_tagged or replyfeel.has_emotion_tag(script)
+        script = (replyfeel.tag_for(script, spoken, model_tagged) + ' ' + script).strip()   # no tag from the model: read it from the words
         scripts.append(script)
         return {'answer': spoken, 'script': script}
 
