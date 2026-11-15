@@ -63,6 +63,37 @@ from luna.server.appref import _app
 
 
 
+class _Got:
+    """What her reply asked for, collected while it streamed: each list is delivered, after she finished speaking, by _deliver."""
+    def __init__(self):
+        self.asked = []   # actions she requested this turn: the page will ask the user before anything happens
+        self.tasks = []   # a mouse-and-keyboard job she proposes: the creator must press Start
+        self.ue_ops = []   # Unreal operations she asks for: each needs the creator's press
+        self.gd_ops = []   # Godot operations she asks for (work mode): each needs the creator's press
+        self.diffs = []   # [diff:...] review of git changes in the project she was last shown (work mode): he presses Show
+        self.sqls = []   # [sql:query]: one read-only query on a SQLite file of the project (work mode): he sees it and presses Run
+        self.envs = []   # [env:...] read-only diagnostics of this computer (work mode): he presses Show
+        self.scans = []   # [scan:...] audits of the project she was last shown (work mode): he presses Show
+        self.un_ops = []   # Unity operations she asks for (work mode): each needs the creator's press
+        self.lookups = []   # ('find' | 'search', words): searched locally after she finished speaking
+        self.sites = []   # [go:site]: a website to open
+        self.docreads = []   # [doc:name]: one of his documents or folders she wants to read: he presses Show
+        self.moves = []   # [move:file >> folder]: tidying up, he presses Move
+        self.jots = []   # [note:title >> text]: her own corner (nook.py): written at once, no plate; he is only told
+        self.plans = []   # [plan:step | step | step]: a chain of steps he approves as a whole (the page runs them one by one, every step keeps its own plates)
+        self.clips = []   # [clip:...]: she wants to see what he copied: he presses Show, the page reads the clipboard
+        self.webs = []   # [web:question]: she looks it up on the internet herself (read-only)
+        self.sums = []   # [calc:expression]: exact arithmetic done by the program, not by feel (read-only)
+        self.reads = []   # code files she wants to see: the creator agrees first
+        self.runs = []   # development commands she wants run in the project: the creator sees the command and presses Run
+        self.codes = []   # code blocks of the reply: shown, not spoken
+        self.edits = []   # ```lunaedit blocks: changes to a code file she was shown, each needs the creator's press after seeing the diff
+        self.projs = []   # ```lunaproject blocks: a new project (set of new files) in the sandbox, needs the creator's press
+        self.notes = []   # ```lunastandup blocks: today's stand-up she writes down after he told her
+        self.docs = []   # ```lunadoc blocks: Word / PowerPoint / Excel she proposes, each needs the creator's press
+        self.capped = {'godot': False, 'unity': False}
+
+
 def _turn_text(data, initiative):
     """What she is answering: his message, or the service note that makes her speak first (raises ValueError when there is nothing to say)."""
     if initiative:   # she speaks first: a service note instead of a user message
@@ -235,34 +266,35 @@ def chat_turn(data):
     model_tagged = False   # the model wrote an [emotion] in this reply: then its tags are the only ones (replyfeel.py fills in only when it wrote none)
     quiet = False
 
-    asked = []   # actions she requested this turn: the page will ask the user before anything happens
-    tasks = []   # a mouse-and-keyboard job she proposes: the creator must press Start
-    ue_ops = []   # Unreal operations she asks for: each needs the creator's press
-    gd_ops = []   # Godot operations she asks for (work mode): each needs the creator's press
-    CAPPED = {'godot': False, 'unity': False}   # set when she asked for more operations than fit in one reply
-    diffs = []   # [diff:...] review of git changes in the project she was last shown (work mode): he presses Show
-    sqls = []   # [sql:query]: one read-only query on a SQLite file of the project (work mode): he sees it and presses Run
-    envs = []   # [env:...] read-only diagnostics of this computer (work mode): he presses Show
-    scans = []   # [scan:...] audits of the project she was last shown (work mode): he presses Show
-    un_ops = []   # Unity operations she asks for (work mode): each needs the creator's press
-    lookups = []   # ('find' | 'search', words): searched locally after she finished speaking
-    sites = []   # [go:site]: a website to open
-    docreads = []   # [doc:name]: one of his documents or folders she wants to read: he presses Show
-    moves = []   # [move:file >> folder]: tidying up, he presses Move
-    jots = []   # [note:title >> text]: her own corner (nook.py): written at once, no plate; he is only told
-    plans = []   # [plan:step | step | step]: a chain of steps he approves as a whole (the page runs them one by one, every step keeps its own plates)
-    clips = []   # [clip:...]: she wants to see what he copied: he presses Show, the page reads the clipboard
-    webs = []   # [web:question]: she looks it up on the internet herself (read-only)
-    sums = []   # [calc:expression]: exact arithmetic done by the program, not by feel (read-only)
+    got = _Got()   # everything she asked for in this reply, in the order it was found (delivered by _deliver)
+    asked = got.asked   # actions she requested this turn: the page will ask the user before anything happens
+    tasks = got.tasks   # a mouse-and-keyboard job she proposes: the creator must press Start
+    ue_ops = got.ue_ops   # Unreal operations she asks for: each needs the creator's press
+    gd_ops = got.gd_ops   # Godot operations she asks for (work mode): each needs the creator's press
+    CAPPED = got.capped   # set when she asked for more operations than fit in one reply
+    diffs = got.diffs   # [diff:...] review of git changes in the project she was last shown (work mode): he presses Show
+    sqls = got.sqls   # [sql:query]: one read-only query on a SQLite file of the project (work mode): he sees it and presses Run
+    envs = got.envs   # [env:...] read-only diagnostics of this computer (work mode): he presses Show
+    scans = got.scans   # [scan:...] audits of the project she was last shown (work mode): he presses Show
+    un_ops = got.un_ops   # Unity operations she asks for (work mode): each needs the creator's press
+    lookups = got.lookups   # ('find' | 'search', words): searched locally after she finished speaking
+    sites = got.sites   # [go:site]: a website to open
+    docreads = got.docreads   # [doc:name]: one of his documents or folders she wants to read: he presses Show
+    moves = got.moves   # [move:file >> folder]: tidying up, he presses Move
+    jots = got.jots   # [note:title >> text]: her own corner (nook.py): written at once, no plate; he is only told
+    plans = got.plans   # [plan:step | step | step]: a chain of steps he approves as a whole (the page runs them one by one, every step keeps its own plates)
+    clips = got.clips   # [clip:...]: she wants to see what he copied: he presses Show, the page reads the clipboard
+    webs = got.webs   # [web:question]: she looks it up on the internet herself (read-only)
+    sums = got.sums   # [calc:expression]: exact arithmetic done by the program, not by feel (read-only)
     tainted = isinstance(data, dict) and data.get('web') is True   # this turn follows text from the internet: nothing opens on its own
     depth = data.get('depth') if isinstance(data, dict) and isinstance(data.get('depth'), int) else 0
-    reads = []   # code files she wants to see: the creator agrees first
-    runs = []   # development commands she wants run in the project: the creator sees the command and presses Run
-    codes = []   # code blocks of the reply: shown, not spoken
-    edits = []   # ```lunaedit blocks: changes to a code file she was shown, each needs the creator's press after seeing the diff
-    projs = []   # ```lunaproject blocks: a new project (set of new files) in the sandbox, needs the creator's press
-    notes = []   # ```lunastandup blocks: today's stand-up she writes down after he told her
-    docs = []   # ```lunadoc blocks: Word / PowerPoint / Excel she proposes, each needs the creator's press
+    reads = got.reads   # code files she wants to see: the creator agrees first
+    runs = got.runs   # development commands she wants run in the project: the creator sees the command and presses Run
+    codes = got.codes   # code blocks of the reply: shown, not spoken
+    edits = got.edits   # ```lunaedit blocks: changes to a code file she was shown, each needs the creator's press after seeing the diff
+    projs = got.projs   # ```lunaproject blocks: a new project (set of new files) in the sandbox, needs the creator's press
+    notes = got.notes   # ```lunastandup blocks: today's stand-up she writes down after he told her
+    docs = got.docs   # ```lunadoc blocks: Word / PowerPoint / Excel she proposes, each needs the creator's press
 
     def sentence(piece):
         nonlocal carry, model_tagged
@@ -457,130 +489,135 @@ def chat_turn(data):
         if not scripts and not codes:
             raise RuntimeError('API вернул пустой ответ. Попробуй короткое сообщение ещё раз.')
         commit()
-        if S.agent and not initiative and not tainted and not (asked or lookups or sites or webs or sums or reads or runs or docreads or moves or clips or plans):
-            for kind, arg in agent.intent_commands(text, netsearch.known_site):   # he asked plainly and she forgot the command: it is still done
-                (sites if kind == 'go' else lookups).append(arg if kind == 'go' else (kind, arg))
-        for a in asked[:2]:
-            if tainted:   # the idea may come from a web page, not from the creator: he presses Allow
-                _app().PENDING[a['id']] = time.time()
-                yield {'action': {'id': a['id'], 'label': a['label'], 'kind': a['kind']}}
-                continue
-            try:   # he asked himself: it opens at once
-                _app().run_action(a)
-                audit.log('open', a['label'])
-                yield {'opened': a['label']}
-            except OSError:
-                yield {'openfail': a['label']}
-        for task in tasks:
-            yield {'task': control.propose(task)}
-        for arg in diffs:
-            plate = gitdiff.propose(arg)
-            if plate:
-                yield {'difffail': plate['fail']} if 'fail' in plate else {'diff': plate}
-        for arg in sqls:
-            plate = sqlrun.propose(arg)
-            if plate:
-                yield {'sqlfail': plate} if 'fail' in plate else {'sql': plate}
-        for arg in envs:
-            plate = envdiag.propose(arg)
-            if plate:
-                yield {'env': plate}
-        for arg in scans:
-            plate = codescan.propose(arg)
-            yield {'scanfail': plate['fail']} if 'fail' in plate else {'scan': plate}
-        for op in un_ops:
-            plate = unity_bridge.propose(op)
-            if plate:
-                yield {'unityfail': plate['fail']} if 'fail' in plate else {'unity': plate}
-        for op in gd_ops:
-            plate = godot_bridge.propose(op)
-            if plate:
-                yield {'godotfail': plate['fail']} if 'fail' in plate else {'godot': plate}
-        if CAPPED['godot']:
-            yield {'godotfail': 'capped'}
-        if CAPPED['unity']:
-            yield {'unityfail': 'capped'}
-        for op in ue_ops:
-            plate = unreal_bridge.propose(op)
-            if plate:
-                yield {'unreal': plate}
-        known = studio.find(text) if not initiative and _app().SING_ASK.search(text or '') else None
-        if known:   # a song from her library: the recording itself is performed
-            yield {'perform': {'id': known['id'], 'title': known['title'], 'bpm': known.get('bpm', 0), 'her': bool(known.get('her'))}}
-        for cmd in runs:
-            plate = runner.propose(cmd)
-            yield {'runfail': plate['fail']} if 'fail' in plate else {'run': plate}
-        for src in notes:
-            if standup.save(src):
-                yield {'standup': True}
-        for src in docs:
-            plate = office.propose(src)
-            yield {'document': plate} if plate else {'docfail': True}
-        for src in edits:
-            try:
-                yield {'edit': codeedit.propose(src)}
-            except ValueError as exc:
-                yield {'editfail': str(exc)}
-        for src in projs:
-            try:
-                yield {'project': projects.propose(src)}
-            except ValueError as exc:
-                yield {'projectfail': str(exc)}
-        for name in reads:
-            items = devtools.find_code(name)
-            yield {'readfile': {'query': name, 'items': items}} if items else {'notfound': name}
-        for arg in jots:
-            parsed = nook.parse(arg)
-            if not parsed:
-                continue
-            try:
-                done = nook.write(*parsed)
-                audit.log('nook', done['file'], True)
-                yield {'noted': {'title': done['title'], 'added': done['added']}}
-            except (ValueError, OSError) as exc:
-                yield {'notefail': str(exc)}
-        for steps in plans:
-            yield {'plan': {'steps': steps}}   # nothing runs before he presses Start on the page
-        for _ in clips:
-            yield {'clip': True}   # the page asks him; nothing is read before he presses Show
-        for name in docreads:
-            items = docfiles.find(name)
-            yield {'docfile': {'query': name, 'items': items}} if items else {'notfound': name}
-        for spec in moves:
-            plate = docfiles.propose_move(spec)
-            yield {'movefail': plate['fail']} if 'fail' in plate else {'move': plate}
-        for site in sites:
-            found = netsearch.resolve_site(site)
-            if found:   # a listed name or a public address: opens at once, as before
-                item = agent.offer('url', found[0], found[1])
-                yield from open_item(item, tainted, {'query': site, 'items': [item]})
-                continue
-            # an unknown name: look it up and let him confirm; nothing opens until he presses
-            items = [agent.offer('url', url, title, urllib.parse.urlsplit(url).hostname or '')
-                     for url, title in netsearch.site_candidates(site)]
-            yield {'choices': {'query': site, 'items': items}} if items else {'notfound': site}
-        for kind, words in lookups[:2]:
-            if kind == 'search':
-                item = agent.google(words)
-                yield from open_item(item, tainted, {'query': words, 'search': True, 'items': [item]})
-            else:
-                items = agent.find(words)
-                if len(items) == 1:
-                    yield from open_item(items[0], tainted, {'query': words, 'items': items})
-                else:
-                    yield {'choices': {'query': words, 'items': items}} if items else {'notfound': words}
-        for question in webs:   # read-only research: the page sends the excerpts back to her as data
-            found = netsearch.research(question)
-            if found:
-                yield {'web': {'query': question, 'text': security.neutralize(ACT_RE.sub('', found), 6000), 'depth': depth + 1}}
-            else:
-                yield {'webfail': question}
-        for expr in sums:
-            result = exact.calc(expr)
-            yield {'calc': {'query': expr, 'text': result, 'depth': depth + 1}} if result else {'calcfail': expr}
-        yield {'done': True, 'mood': mood_now()}
+        yield from _deliver(got, text, initiative, tainted, depth)
     finally:
         commit()   # also when the page interrupted her: remember what was actually said
+
+
+def _deliver(got, text, initiative, tainted, depth):
+    """After the reply is spoken and remembered: the plates, searches and openings she asked for, as page events, then the end of the turn."""
+    if S.agent and not initiative and not tainted and not (got.asked or got.lookups or got.sites or got.webs or got.sums or got.reads or got.runs or got.docreads or got.moves or got.clips or got.plans):
+        for kind, arg in agent.intent_commands(text, netsearch.known_site):   # he asked plainly and she forgot the command: it is still done
+            (got.sites if kind == 'go' else got.lookups).append(arg if kind == 'go' else (kind, arg))
+    for a in got.asked[:2]:
+        if tainted:   # the idea may come from a web page, not from the creator: he presses Allow
+            _app().PENDING[a['id']] = time.time()
+            yield {'action': {'id': a['id'], 'label': a['label'], 'kind': a['kind']}}
+            continue
+        try:   # he asked himself: it opens at once
+            _app().run_action(a)
+            audit.log('open', a['label'])
+            yield {'opened': a['label']}
+        except OSError:
+            yield {'openfail': a['label']}
+    for task in got.tasks:
+        yield {'task': control.propose(task)}
+    for arg in got.diffs:
+        plate = gitdiff.propose(arg)
+        if plate:
+            yield {'difffail': plate['fail']} if 'fail' in plate else {'diff': plate}
+    for arg in got.sqls:
+        plate = sqlrun.propose(arg)
+        if plate:
+            yield {'sqlfail': plate} if 'fail' in plate else {'sql': plate}
+    for arg in got.envs:
+        plate = envdiag.propose(arg)
+        if plate:
+            yield {'env': plate}
+    for arg in got.scans:
+        plate = codescan.propose(arg)
+        yield {'scanfail': plate['fail']} if 'fail' in plate else {'scan': plate}
+    for op in got.un_ops:
+        plate = unity_bridge.propose(op)
+        if plate:
+            yield {'unityfail': plate['fail']} if 'fail' in plate else {'unity': plate}
+    for op in got.gd_ops:
+        plate = godot_bridge.propose(op)
+        if plate:
+            yield {'godotfail': plate['fail']} if 'fail' in plate else {'godot': plate}
+    if got.capped['godot']:
+        yield {'godotfail': 'capped'}
+    if got.capped['unity']:
+        yield {'unityfail': 'capped'}
+    for op in got.ue_ops:
+        plate = unreal_bridge.propose(op)
+        if plate:
+            yield {'unreal': plate}
+    known = studio.find(text) if not initiative and _app().SING_ASK.search(text or '') else None
+    if known:   # a song from her library: the recording itself is performed
+        yield {'perform': {'id': known['id'], 'title': known['title'], 'bpm': known.get('bpm', 0), 'her': bool(known.get('her'))}}
+    for cmd in got.runs:
+        plate = runner.propose(cmd)
+        yield {'runfail': plate['fail']} if 'fail' in plate else {'run': plate}
+    for src in got.notes:
+        if standup.save(src):
+            yield {'standup': True}
+    for src in got.docs:
+        plate = office.propose(src)
+        yield {'document': plate} if plate else {'docfail': True}
+    for src in got.edits:
+        try:
+            yield {'edit': codeedit.propose(src)}
+        except ValueError as exc:
+            yield {'editfail': str(exc)}
+    for src in got.projs:
+        try:
+            yield {'project': projects.propose(src)}
+        except ValueError as exc:
+            yield {'projectfail': str(exc)}
+    for name in got.reads:
+        items = devtools.find_code(name)
+        yield {'readfile': {'query': name, 'items': items}} if items else {'notfound': name}
+    for arg in got.jots:
+        parsed = nook.parse(arg)
+        if not parsed:
+            continue
+        try:
+            done = nook.write(*parsed)
+            audit.log('nook', done['file'], True)
+            yield {'noted': {'title': done['title'], 'added': done['added']}}
+        except (ValueError, OSError) as exc:
+            yield {'notefail': str(exc)}
+    for steps in got.plans:
+        yield {'plan': {'steps': steps}}   # nothing runs before he presses Start on the page
+    for _ in got.clips:
+        yield {'clip': True}   # the page asks him; nothing is read before he presses Show
+    for name in got.docreads:
+        items = docfiles.find(name)
+        yield {'docfile': {'query': name, 'items': items}} if items else {'notfound': name}
+    for spec in got.moves:
+        plate = docfiles.propose_move(spec)
+        yield {'movefail': plate['fail']} if 'fail' in plate else {'move': plate}
+    for site in got.sites:
+        found = netsearch.resolve_site(site)
+        if found:   # a listed name or a public address: opens at once, as before
+            item = agent.offer('url', found[0], found[1])
+            yield from open_item(item, tainted, {'query': site, 'items': [item]})
+            continue
+        # an unknown name: look it up and let him confirm; nothing opens until he presses
+        items = [agent.offer('url', url, title, urllib.parse.urlsplit(url).hostname or '')
+                 for url, title in netsearch.site_candidates(site)]
+        yield {'choices': {'query': site, 'items': items}} if items else {'notfound': site}
+    for kind, words in got.lookups[:2]:
+        if kind == 'search':
+            item = agent.google(words)
+            yield from open_item(item, tainted, {'query': words, 'search': True, 'items': [item]})
+        else:
+            items = agent.find(words)
+            if len(items) == 1:
+                yield from open_item(items[0], tainted, {'query': words, 'items': items})
+            else:
+                yield {'choices': {'query': words, 'items': items}} if items else {'notfound': words}
+    for question in got.webs:   # read-only research: the page sends the excerpts back to her as data
+        found = netsearch.research(question)
+        if found:
+            yield {'web': {'query': question, 'text': security.neutralize(ACT_RE.sub('', found), 6000), 'depth': depth + 1}}
+        else:
+            yield {'webfail': question}
+    for expr in got.sums:
+        result = exact.calc(expr)
+        yield {'calc': {'query': expr, 'text': result, 'depth': depth + 1}} if result else {'calcfail': expr}
+    yield {'done': True, 'mood': mood_now()}
 
 
 def open_item(item, tainted, plate):
