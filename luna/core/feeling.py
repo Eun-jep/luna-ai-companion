@@ -3,7 +3,7 @@
 It works only when a real embedding model is connected (settings.json: "embeddings": "ollama:nomic-embed-text", local Ollama, see character.use_embeddings).
 Then the message is compared with a few example sentences per tone (four languages); the nearest tone wins if it is clearly closer than everyday talk.
 Without such a model it does nothing: the offline word-form vectors know nothing of meaning, and a guess would only put wrong feelings into her.
-character.sense() asks this only when its word lists found no tone. The thresholds are cautious guesses: tools/feeling_check.py prints the scores for your phrases.
+character.sense() asks this only when its word lists found no tone. The thresholds were measured on nomic-embed-text with 52 labelled phrases (no false alarms, no wrong tone, about half of the real ones found); another model needs its own look: tools/feeling_check.py prints the scores for your phrases.
 Rude is never guessed from meaning: an offence is remembered and hurts, so it needs words. Nothing here leaves the computer."""
 import threading
 import time
@@ -12,7 +12,7 @@ from luna.core import memory_store
 
 FLOOR = 0.35          # as in memory_store.similarities: below it two texts share only the ordinary words of the language
 MIN_SIM = 0.45        # how close to an example the message must be (0..1 after the floor)
-MARGIN = 0.05         # and how much closer than to everyday talk
+MARGIN = 0.18         # and how much closer than to everyday talk (measured on nomic-embed-text, see CHANGELOG: 0.05 gave false alarms and wrong tones)
 MIN_CHARS, MAX_CHARS = 6, 300
 COOLDOWN = 60         # seconds without trying again after the model failed
 
