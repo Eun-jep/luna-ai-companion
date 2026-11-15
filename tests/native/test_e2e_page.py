@@ -54,6 +54,36 @@ def browser():
         b.close()
 
 
+# FIRST in the file on purpose: the wizard shows on the first launch only, and every other test that opens the page uses that up.
+def test_first_run_wizard_walks_through(browser, url):
+    page = new_page(browser)
+    errors = []
+    page.on('pageerror', lambda e: errors.append(str(e)))
+    page.goto(url, wait_until='domcontentloaded')
+    page.wait_for_selector('#wizard:not([hidden]) #wz-card')
+    page.get_by_role('button', name='Русский').click()   # the interface switches language at once
+    wait_until(page, "() => document.querySelector('#wz-title').textContent.includes('Луна')")
+    page.get_by_role('button', name='Дальше').click()
+    page.wait_for_selector('.wz-grid button')
+    page.locator('.wz-grid button').first.click()   # choosing an online network asks for its key
+    assert page.locator('.wz-key').is_visible()
+    page.fill('.wz-key input', '')
+    page.click('.wz-key button[type=submit]')   # an empty key is refused and nothing is sent
+    assert page.locator('.wz-key .error').inner_text().strip()
+    page.get_by_role('button', name='Позже').click()
+    page.wait_for_selector('#wizard', state='hidden')
+    assert not errors, errors
+    page.close()
+
+    # the wizard is for the first launch only: once seen, "later" is respected and it does not come back
+    page = new_page(browser)
+    page.goto(url, wait_until='domcontentloaded')
+    page.wait_for_selector('#stage canvas')
+    page.wait_for_timeout(1500)
+    assert page.locator('#wizard').is_hidden()
+    page.close()
+
+
 def test_echo_of_her_own_voice_is_recognised(browser, url):
     page = new_page(browser)
     page.goto(url, wait_until='domcontentloaded')
@@ -85,38 +115,16 @@ def test_page_works_under_the_strict_csp(browser, url):
     page.close()
 
 
-def test_first_run_wizard_walks_through(browser, url):
-    page = new_page(browser)
-    errors = []
-    page.on('pageerror', lambda e: errors.append(str(e)))
-    page.goto(url, wait_until='domcontentloaded')
-    page.wait_for_selector('#wizard:not([hidden]) #wz-card')
-    page.get_by_role('button', name='Русский').click()   # the interface switches language at once
-    wait_until(page, "() => document.querySelector('#wz-title').textContent.includes('Луна')")
-    page.get_by_role('button', name='Дальше').click()
-    page.wait_for_selector('.wz-grid button')
-    page.locator('.wz-grid button').first.click()   # choosing an online network asks for its key
-    assert page.locator('.wz-key').is_visible()
-    page.fill('.wz-key input', '')
-    page.click('.wz-key button[type=submit]')   # an empty key is refused and nothing is sent
-    assert page.locator('.wz-key .error').inner_text().strip()
-    page.get_by_role('button', name='Позже').click()
-    page.wait_for_selector('#wizard', state='hidden')
-    assert not errors, errors
-    page.close()
-
-
 def test_page_loads_without_errors_and_answers(browser, url):
     page = new_page(browser)
     errors = []
     page.on('pageerror', lambda e: errors.append(str(e)))
     page.goto(url, wait_until='domcontentloaded')
     page.wait_for_selector('#message', state='attached')
-    page.wait_for_selector('#wizard:not([hidden]) button')
-    page.click('#wz-card .row button')   # language step -> network step (the language is whatever the earlier test left)
-    page.click('#wz-card .row button')   # no key in the test: leave the wizard ("Later")
-    page.wait_for_selector('#wizard', state='hidden')
-    page.click('[data-tab=chat]')   # leaving the wizard without a network opens the settings
+    page.wait_for_selector('#stage canvas')
+    page.wait_for_timeout(1500)
+    assert page.locator('#wizard').is_hidden()   # seen once already (the first test): it does not come back
+    page.click('[data-tab=chat]')   # without a network the settings tab is the one open
     page.evaluate("document.getElementById('open-chat') && (document.getElementById('open-chat').click())")
     page.fill('#message', 'привет')
     page.click('#send')
