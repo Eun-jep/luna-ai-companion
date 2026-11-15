@@ -84,6 +84,58 @@ def test_first_run_wizard_walks_through(browser, url):
     page.close()
 
 
+SWITCHES = ['follow', 'presence', 'work', 'drag', 'initiative', 'speak', 'agent', 'voicenative']   # the ones a plain browser can restore (the rest need the desktop shell or a camera)
+
+
+def test_every_switch_stays_as_it_was_left(browser, url):
+    """Flip each switch, reload (a new page, as after a restart): every one is as it was left, not back at its default."""
+    page = new_page(browser)
+    page.goto(url, wait_until='domcontentloaded')
+    page.wait_for_selector('#stage canvas')
+    page.wait_for_timeout(1500)   # the saved values are applied once the model list has loaded
+    flip = """(ids) => ids.map(id => { const b = document.getElementById(id); b.checked = !b.checked; b.dispatchEvent(new Event('change')); return b.checked; })"""
+    want = page.evaluate(flip, SWITCHES)
+    page.wait_for_timeout(1200)   # the page writes its settings 300 ms after the last change
+    page.close()
+
+    page = new_page(browser)
+    page.goto(url, wait_until='domcontentloaded')
+    page.wait_for_selector('#stage canvas')
+    page.wait_for_timeout(1500)
+    got = page.evaluate("(ids) => ids.map(id => document.getElementById(id).checked)", SWITCHES)
+    assert got == want, dict(zip(SWITCHES, zip(want, got)))
+    page.evaluate(flip, SWITCHES)   # put them back for the tests that follow
+    page.wait_for_timeout(1200)
+    page.close()
+
+
+def test_desktop_switches_come_back_without_asking_again(browser, url):
+    """Eye, media and song recognition each asked for a confirmation when first turned on; after a restart they return as they were, silently."""
+    stub = """window.desktop = {setInteractive() {}, capture: async () => null, peek: async () => null, title: async () => '', quit() {}, wake() {},
+        onCursor() {}, onStopAgent() {}, onToggleEye() {}}; window.__confirms = 0; window.confirm = () => { window.__confirms++; return true; };"""
+    ids = ['eye', 'media', 'songid']
+    page = new_page(browser)
+    page.add_init_script(stub)
+    page.goto(url, wait_until='domcontentloaded')
+    page.wait_for_selector('#stage canvas')
+    page.wait_for_timeout(1500)
+    page.evaluate("(ids) => ids.forEach(id => { const b = document.getElementById(id); b.checked = true; b.dispatchEvent(new Event('change')); })", ids)
+    assert page.evaluate('window.__confirms') == 3   # asked once each, the first time
+    page.wait_for_timeout(1200)
+    page.close()
+
+    page = new_page(browser)
+    page.add_init_script(stub)
+    page.goto(url, wait_until='domcontentloaded')
+    page.wait_for_selector('#stage canvas')
+    page.wait_for_timeout(1500)
+    assert page.evaluate("(ids) => ids.map(id => document.getElementById(id).checked)", ids) == [True, True, True]
+    assert page.evaluate('window.__confirms') == 0   # not asked again
+    page.evaluate("(ids) => ids.forEach(id => { const b = document.getElementById(id); b.checked = false; b.dispatchEvent(new Event('change')); })", ids)   # off again for the tests that follow
+    page.wait_for_timeout(1200)
+    page.close()
+
+
 def test_echo_of_her_own_voice_is_recognised(browser, url):
     page = new_page(browser)
     page.goto(url, wait_until='domcontentloaded')

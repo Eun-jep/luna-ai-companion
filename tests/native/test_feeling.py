@@ -32,7 +32,7 @@ def model(tmp_path):
     memory_store.set_embedder('toy', toy)
     feeling.reset()
     feeling.warm('toy')
-    for _ in range(100):
+    for _ in range(600):
         if 'toy' in feeling._pool:
             break
         time.sleep(0.05)

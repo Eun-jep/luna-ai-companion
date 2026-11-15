@@ -77,7 +77,8 @@ def test_a_dead_network_costs_one_try_not_one_per_fact(monkeypatch):
     assert len(calls) == 1   # still resting
 
 
-def test_use_embeddings_follows_the_choice():
+def test_use_embeddings_follows_the_choice(monkeypatch):
+    monkeypatch.setattr(feeling, 'warm', lambda name: None)   # no background warm-up (it would call the real service with a made-up key)
     providers.set_embed(True)
     assert character.use_embeddings('cloud:gemini') is True
     assert memory_store._embedder[0].startswith('cloud:gemini')

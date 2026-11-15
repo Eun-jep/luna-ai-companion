@@ -184,8 +184,15 @@ def vector(text):
             return name, vec
     except Exception:   # a model that is down must never break recall
         pass
-    _down_until[0] = time.time() + BREAKER
+    _rest(emb)
     return None, None
+
+
+def _rest(emb):
+    """Leave a failing embedder alone for a while. Only if it is still the one in use: a slow thread of a previous embedder must not silence the new one."""
+    with LOCK:
+        if _embedder is emb:
+            _down_until[0] = time.time() + BREAKER
 
 
 def prefetch(texts):
@@ -216,7 +223,7 @@ def prefetch(texts):
                     with LOCK:
                         _store(name, t, _unit(v))
         except Exception:
-            _down_until[0] = time.time() + BREAKER
+            _rest(emb)
             return
 
 

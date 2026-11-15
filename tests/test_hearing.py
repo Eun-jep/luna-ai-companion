@@ -189,14 +189,11 @@ hearing._capture = broken
 post('/chat', {'message': 'слышишь музыку?', 'lang': 'ru', 'hear': True})
 ok('a failed listen is not reported as silence', 'не вышло' in seen['last'] and 'OSError' in seen['last'] and 'тишина' not in seen['last'].split('не вышло')[0][-20:])
 
-# "remember my choice": a separate opt-in, off by default, never restores hearing without both flags
+# every switch is remembered as it was left: hearing comes back on its own, without a second "remember" box
 js = open(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'web', 'app.js'), encoding='utf-8').read()
 html = open(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'index.html'), encoding='utf-8').read()
-i18n = open(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'web', 'i18n.js'), encoding='utf-8').read()
-ok('hearkeep checkbox is off by default', 'id="hearkeep"' in html and 'id="hearkeep" checked' not in html)
-ok('hearing returns only with both flags saved', 'saved.hearkeep === true && saved.hearon === true' in js)
-ok('hearon is saved only when the keep box is ticked', "$('#hearkeep').checked && $('#hear')" in js)
-ok('hearkeep in all four languages', i18n.count("hearkeep: '") == 4 and i18n.count("'hearkeep.d'") == 4)
+ok('there is no separate "remember" box any more', 'hearkeep' not in html and 'hearkeep' not in js)
+ok('hearing returns when it was left on', 'saved.hearon !== true' in js and "hearon: !!($('#hear') && $('#hear').checked)" in js)
 
 # song by its words: only text goes to a search, only when he asks, only without a window title
 words = {'kind': 'voice', 'text': 'мы вышли в ночь под звёздным небом [ой] и тихо', 'about': 'слышны слова'}

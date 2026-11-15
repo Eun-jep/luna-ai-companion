@@ -12,7 +12,8 @@ const saved = (() => {
   try { return JSON.parse(localStorage.getItem('companion') || '{}'); } catch { return {}; }
 })();
 const flags = {wizardSeen: !!saved.wizardSeen};   // the first-run wizard appears once; "Setup guide" in the settings opens it again
-let settingsReady = false, saveTimer = null, hearRestoring = false;   // nothing is written before the saved values have been applied
+let settingsReady = false, saveTimer = null, restoring = false;   // restoring: a switch is being put back as it was left, its confirmation was given when it was first turned on
+// nothing is written before the saved values have been applied
 setUiLang(saved.ui || 'en');   // English by default
 el.uilang.value = uiLang;
 function collectState() {
@@ -21,7 +22,8 @@ function collectState() {
       handsfree: el.handsfree.checked, bg: el.bg.value, closed: el.panel.hidden,
       minimized: el.panel.classList.contains('minimized'), anchor, place: avatar.place,
       wizardSeen: flags.wizardSeen, ui: uiLang, agent: el.agent.checked, control: el.control.checked, work: el.work.checked, drag: el.drag.checked, voicenative: el.voicenative.checked, ttsengine: el.ttsengine.value,
-      hearkeep: !!($('#hearkeep') && $('#hearkeep').checked), hearon: !!($('#hearkeep') && $('#hearkeep').checked && $('#hear') && $('#hear').checked)};
+      camera: el.camera.checked, eye: !!(el.eye && el.eye.checked), media: !!(el.media && el.media.checked), songid: !!($('#songid') && $('#songid').checked),
+      hearon: !!($('#hear') && $('#hear').checked)};
 }
 function persist() {
   if (!settingsReady) return;
@@ -940,8 +942,9 @@ function glance(emotion, ms) {
 const camNote = $('#camera-note');
 function cameraNote(text, error = false) { camNote.textContent = text; camNote.className = 'hint' + (error ? ' error' : ''); setStatus(text, error); }
 el.camera.addEventListener('change', async () => {
-  if (!el.camera.checked) { vision?.stop(); vision = null; el.cam.hidden = true; cameraNote(''); return; }
-  if (!confirm(t('cam.title') + '\n\n' + t('cam.confirm'))) { el.camera.checked = false; return; }
+  if (!el.camera.checked) { vision?.stop(); vision = null; el.cam.hidden = true; cameraNote(''); persist(); return; }
+  if (!restoring && !confirm(t('cam.title') + '\n\n' + t('cam.confirm'))) { el.camera.checked = false; persist(); return; }
+  persist();
   cameraNote(t('cam.starting'));
   const v = new Vision(avatar, $('#cam-video'), {
     onSmile: () => glance('happy', 3000),
@@ -1100,7 +1103,15 @@ let models = [];
   el.agent.checked = saved.agent !== false;
   el.work.checked = saved.work === true;   // off unless she was asked to work
   el.control.checked = DESKTOP && saved.control === true;   // off unless she was given the mouse on purpose
-  if (DESKTOP && window.restoreHear) window.restoreHear();   // hearing returns only if "remember my choice" was ticked on purpose
+  // every switch comes back as it was left; what asked for a confirmation when it was first turned on is not asked again
+  restoring = true;
+  try {
+    for (const [id, only] of [['camera', false], ['eye', true], ['media', true], ['songid', true]]) {
+      const box = $('#' + id);
+      if (saved[id] === true && box && (DESKTOP || !only)) { box.checked = true; box.dispatchEvent(new Event('change')); }
+    }
+    if (DESKTOP && window.restoreHear) window.restoreHear();
+  } finally { restoring = false; }
   document.title = t('name');
   if (saved.bg) el.bg.value = saved.bg;
   el.panel.classList.toggle('minimized', !!saved.minimized);
@@ -1112,6 +1123,7 @@ let models = [];
   await provInit().catch(() => {});   // which network she thinks with: from the server, nothing to type in a console
   if (!m.length) { $('#loading').textContent = t('models.none'); return; }
   await loadModel();
+  if (saved.handsfree === true) { el.handsfree.checked = true; try { startRecognition(); } catch { /* the microphone is not available: the switch stays as chosen, the status line says why */ } }
   if (avatar.model && el.initiative.checked && provReady()) setTimeout(() => converse('', 'greet'), 1200);   // greet once per page load
 })().catch(() => { settingsReady = true; setStatus(t('models.listfail'), true); });
 
@@ -1121,7 +1133,6 @@ if (DESKTOP) {
   $('#eye-row').hidden = false;
   $('#media-row').hidden = false;
   $('#hear-row').hidden = false;
-  $('#hearkeep-row').hidden = false;
   $('#songid-row').hidden = false;
   $('#control-row').hidden = false;
   $('#drag-row').hidden = false;
@@ -1177,8 +1188,9 @@ if (DESKTOP) {
     if (on) scheduleGlance();
   }
   el.eye.addEventListener('change', () => {
-    if (el.eye.checked && !confirm(t('eye.confirm'))) { el.eye.checked = false; return; }
+    if (el.eye.checked && !restoring && !confirm(t('eye.confirm'))) el.eye.checked = false;
     setEye(el.eye.checked);
+    persist();
   });
   window.desktop.onToggleEye(() => { if (eye()) setEye(false); });
 
@@ -1187,7 +1199,8 @@ if (DESKTOP) {
   el.media = $('#media');
   let mediaTimer = null, mediaSeen = '', mediaSince = 0;
   el.media.addEventListener('change', () => {
-    if (el.media.checked && !confirm(t('media.confirm'))) { el.media.checked = false; return; }
+    if (el.media.checked && !restoring && !confirm(t('media.confirm'))) el.media.checked = false;
+    persist();
     clearInterval(mediaTimer); mediaNow = ''; mediaSeen = '';
     setStatus(el.media.checked ? t('media.on') : t('media.off'));
     if (el.media.checked) mediaTimer = setInterval(pollMedia, 15000);
@@ -1208,26 +1221,25 @@ if (DESKTOP) {
   // seconds and understands it on this computer; no audio is kept. When music or words keep playing, she may comment.
   el.hear = $('#hear');
   let hearTimer = null, hearKind = '', hearSince = 0, hearBusy = false, lastDance = 0;
-  const hearKeep = $('#hearkeep');
-  hearKeep.addEventListener('change', persist);
   $('#songid').addEventListener('change', e => {   // off at every launch; switching it on is his own, confirmed choice
-    if (e.target.checked && !confirm(t('songid.confirm'))) e.target.checked = false;
+    if (e.target.checked && !restoring && !confirm(t('songid.confirm'))) e.target.checked = false;
+    persist();
   });
   el.hear.addEventListener('change', () => {
     clearInterval(hearTimer); hearKind = '';
     if (el.hear.checked) {
       // a restored choice was confirmed earlier, on purpose, together with "remember my choice"
-      if (!hearRestoring && !confirm(t('hear.confirm'))) { el.hear.checked = false; persist(); return; }
+      if (!restoring && !confirm(t('hear.confirm'))) { el.hear.checked = false; persist(); return; }
       setStatus(t('hear.on'));
       hearTimer = setInterval(pollHear, 20000); pollHear();
     } else { setStatus(t('hear.off')); api('/hear', {on: false}).catch(() => {}); }
     persist();
   });
   window.restoreHear = () => {
-    if (!(saved.hearkeep === true && saved.hearon === true)) return;
-    hearKeep.checked = true; el.hear.checked = true;
-    hearRestoring = true;
-    try { el.hear.dispatchEvent(new Event('change')); } finally { hearRestoring = false; }
+    if (saved.hearon !== true) return;
+    el.hear.checked = true;
+    restoring = true;
+    try { el.hear.dispatchEvent(new Event('change')); } finally { restoring = false; }
   };
   async function pollHear() {
     if (!el.hear.checked || hearBusy || busy || agentRun || avatar.speaking || avatar.listening) return;

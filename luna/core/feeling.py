@@ -39,6 +39,7 @@ _lock = threading.Lock()
 _pool = {}            # embedder name -> {tone: [vectors]}
 _failed = [0.0]
 _warming = set()
+_gen = [0]            # bumped by reset(): a slow warm-up of an earlier embedder must not write its result into the new situation
 
 
 def _vectors(name, phrases):
@@ -52,9 +53,12 @@ def _vectors(name, phrases):
 
 
 def _build(name):
+    gen = _gen[0]
     memory_store.prefetch([p for phrases in (*EXAMPLES.values(), EVERYDAY) for p in phrases])   # a cloud embedder takes them in one request
     sets = {tone: _vectors(name, phrases) for tone, phrases in {**EXAMPLES, '': EVERYDAY}.items()}
     with _lock:
+        if gen != _gen[0]:
+            return   # reset in the meantime: this result belongs to a situation that is gone
         _warming.discard(name)
         if any(v is None for v in sets.values()):
             _failed[0] = time.time()
@@ -106,6 +110,7 @@ def classify(text):
 
 def reset():
     with _lock:
+        _gen[0] += 1
         _pool.clear()
         _warming.clear()
     _failed[0] = 0.0
