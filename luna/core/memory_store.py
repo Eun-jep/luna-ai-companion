@@ -204,8 +204,8 @@ def prefetch(texts):
             with LOCK:
                 if _cached(name, t) is None:
                     todo.append(t)
-    for i in range(0, len(todo), 64):
-        chunk = todo[i:i + 64]
+    for i in range(0, len(todo), 25):   # a free cloud tier counts every text of a request against a per-minute quota: small steps keep what got through
+        chunk = todo[i:i + 25]
         try:
             vecs = batch(chunk)
             if len(vecs) != len(chunk):

@@ -1,6 +1,7 @@
 """Re-tunes MIN_SIM and MARGIN of luna/core/feeling.py: 52 labelled phrases (none of them are the examples in feeling.py) are scored with the real
-embedding model, and every pair of thresholds is tried. Needs Ollama running with the model. Usage:  python tools/feeling_calibrate.py
-Pick the pair with no false alarms and no wrong tones that finds the most real ones. Nothing leaves the computer."""
+embedding model, and every pair of thresholds is tried. Usage:  python tools/feeling_calibrate.py            (needs Ollama with nomic-embed-text; nothing leaves the computer)
+        python tools/feeling_calibrate.py --cloud    (the service chosen in the settings, only if "Understand meaning" is on there: the phrases above and the tone examples go to it)
+Pick the pair with no false alarms and no wrong tones that finds the most real ones. Vectors are kept in memory only, nothing is written to the user data."""
 import itertools
 import sys
 import time
@@ -23,10 +24,28 @@ DATA = {
          'как дела?', 'привет', 'давай поговорим о кино', 'what do you think about jazz'],
 }
 
-memory_store.set_embedder(*memory_store.ollama_embedder(model='nomic-embed-text'))
-feeling.warm('ollama:nomic-embed-text')
+if '--cloud' in sys.argv:
+    from luna.core import providers
+    providers.load()
+    if not providers.embed_spec():
+        sys.exit('the "Understand meaning" switch is off (or the active service cannot do it): turn it on in the settings first')
+    NAME, *fns = providers.embedder()
+    memory_store.set_embedder(NAME, *fns)
+    everything = [p for ps in DATA.values() for p in ps] + [p for ps in (*feeling.EXAMPLES.values(), feeling.EVERYDAY) for p in ps]
+    for attempt in range(12):   # a free tier allows about 100 texts a minute: wait the quota out and go on, what is cached stays
+        memory_store.prefetch(everything)
+        if all(memory_store._cached(NAME, p[:2000]) is not None for p in everything):
+            break
+        wait = max(5, memory_store._down_until[0] - time.time()) + 15
+        print('quota or network: waiting %d s (%d of %d done)' % (wait, sum(memory_store._cached(NAME, p[:2000]) is not None for p in everything), len(everything)), flush=True)
+        time.sleep(wait)
+        memory_store._down_until[0] = 0.0
+else:
+    NAME = 'ollama:nomic-embed-text'
+    memory_store.set_embedder(*memory_store.ollama_embedder(model='nomic-embed-text'))
+feeling.warm(NAME)
 for _ in range(900):
-    if 'ollama:nomic-embed-text' in feeling._pool:
+    if NAME in feeling._pool:
         break
     if feeling._failed[0]:
         sys.exit('model does not answer')
