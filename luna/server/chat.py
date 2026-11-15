@@ -63,22 +63,8 @@ from luna.server.appref import _app
 
 
 
-def chat_turn(data):
-    """One conversation turn as a stream of events: {'answer', 'script'} per sentence, then {'done', 'mood'}.
-    Sentences are cut from the model's text as it is written, so speech can start before the reply is finished."""
-    S.agent = isinstance(data, dict) and data.get('agent') is True and not stream.ON   # no hands on the stream
-    S.work = S.agent and data.get('work') is True
-    S.unreal = S.work   # Unreal is part of her hands: every operation still waits for the creator's press
-    S.control = S.agent and data.get('control') is True
-    S.camera_on = isinstance(data, dict) and data.get('camera') is True
-    S.presence = isinstance(data, dict) and data.get('presence') is True and not stream.ON
-    S.ui_lang = data.get('lang') if isinstance(data, dict) and data.get('lang') in LANGS else 'en'
-    if S.last_lang not in (None, S.ui_lang):   # the language was switched: old replies in the other language would pull her back
-        del HISTORY[:-2]
-    S.last_lang = S.ui_lang
-    if isinstance(data, dict) and data.get('scene') in SCENES:
-        S.scene = data['scene']
-    initiative = data.get('initiative') if isinstance(data, dict) else None
+def _turn_text(data, initiative):
+    """What she is answering: his message, or the service note that makes her speak first (raises ValueError when there is nothing to say)."""
     if initiative:   # she speaks first: a service note instead of a user message
         if initiative not in _app().INITIATIVES or (initiative.startswith('stream') and not stream.ON) or (stream.ON and initiative in ('screen', 'media', 'care', 'late', 'scene', 'return', 'remind')):
             raise ValueError('initiative')
@@ -122,13 +108,11 @@ def chat_turn(data):
         text = data.get('message', '') if isinstance(data, dict) else ''
     if not isinstance(text, str) or not 1 <= len(text.strip()) <= MAX_MESSAGE:
         raise ValueError('message')
-    user = {'role': 'user', 'content': text.strip()}
-    # A screenshot comes with her own glance ('screen') or with a user message about the screen ("видишь?").
-    image = data.get('image') if isinstance(data, dict) and initiative in (None, 'screen') else None
-    if (initiative == 'screen' or image is not None) and not (
-            isinstance(image, str) and image.startswith('data:image/jpeg;base64,') and len(image) <= _app().MAX_IMAGE):
-        raise ValueError('image')
-    # The screenshot goes to the model for this one turn only; the history keeps just the text.
+    return text
+
+
+def _turn_hints(data, text, image, initiative):
+    """Everything the program knows that she should be told right next to this message: the sentences the program counted, read or kept for her."""
     hint = ''
     if image:
         title = data.get('window')
@@ -216,6 +200,34 @@ def chat_turn(data):
     hint += faces.hint(data.get('fx') if isinstance(data, dict) else None, data.get('mo') if isinstance(data, dict) else None)   # the special faces her model has (the page names them)
     # Said right next to the message, where it outweighs earlier replies written in another language.
     hint += ' [Язык ответа: %s. Если он просит иной язык или перевод, сделай как просит.]' % LANGS[S.ui_lang]
+    return hint
+
+
+def chat_turn(data):
+    """One conversation turn as a stream of events: {'answer', 'script'} per sentence, then {'done', 'mood'}.
+    Sentences are cut from the model's text as it is written, so speech can start before the reply is finished."""
+    S.agent = isinstance(data, dict) and data.get('agent') is True and not stream.ON   # no hands on the stream
+    S.work = S.agent and data.get('work') is True
+    S.unreal = S.work   # Unreal is part of her hands: every operation still waits for the creator's press
+    S.control = S.agent and data.get('control') is True
+    S.camera_on = isinstance(data, dict) and data.get('camera') is True
+    S.presence = isinstance(data, dict) and data.get('presence') is True and not stream.ON
+    S.ui_lang = data.get('lang') if isinstance(data, dict) and data.get('lang') in LANGS else 'en'
+    if S.last_lang not in (None, S.ui_lang):   # the language was switched: old replies in the other language would pull her back
+        del HISTORY[:-2]
+    S.last_lang = S.ui_lang
+    if isinstance(data, dict) and data.get('scene') in SCENES:
+        S.scene = data['scene']
+    initiative = data.get('initiative') if isinstance(data, dict) else None
+    text = _turn_text(data, initiative)
+    user = {'role': 'user', 'content': text.strip()}
+    # A screenshot comes with her own glance ('screen') or with a user message about the screen ("видишь?").
+    image = data.get('image') if isinstance(data, dict) and initiative in (None, 'screen') else None
+    if (initiative == 'screen' or image is not None) and not (
+            isinstance(image, str) and image.startswith('data:image/jpeg;base64,') and len(image) <= _app().MAX_IMAGE):
+        raise ValueError('image')
+    # The screenshot goes to the model for this one turn only; the history keeps just the text.
+    hint = _turn_hints(data, text, image, initiative)
     sent = user if not image and not hint else {'role': 'user', 'content': user['content'] + hint} if not image else {
         'role': 'user', 'content': [{'type': 'image_url', 'image_url': {'url': image}},
                                     {'type': 'text', 'text': user['content'] + hint}]}
