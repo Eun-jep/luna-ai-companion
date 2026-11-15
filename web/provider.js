@@ -64,6 +64,11 @@ function provRender() {
   const isCloud = !!s.cloud.find(x => x.id === s.active);
   $('#prov-status').textContent = !s.active ? t('prov.none') : isCloud ? t('prov.keyok').replace('{x}', item.hint) : t('prov.localok');
   $('#prov-keys').hidden = !isCloud;
+  // meaning-based memory and tone through this service: only offered where it has an embeddings endpoint, and only on the user's say-so
+  const emb = s.embed || {};
+  $('#prov-embed-row').hidden = !emb.can;
+  $('#prov-embed').checked = !!emb.on;
+  $('#prov-embed-d').textContent = t('embed.d').replace('{x}', emb.name || '');
   $('#prov-get').hidden = !isCloud;
   if (isCloud) $('#prov-get').href = item.url;
   // local networks found on this computer that are not connected yet
@@ -220,6 +225,11 @@ $('#prov-model').addEventListener('change', async () => {
   const id = prov.state.active, model = $('#prov-model').value;
   if (!id || !model) return;
   try { prov.state = await provCall('model', {id, model}); catHint(); } catch (e) { setStatus(e.message, true); }
+});
+$('#prov-embed').addEventListener('change', async () => {
+  const box = $('#prov-embed');
+  try { prov.state = await provCall('embed', {on: box.checked}); } catch (e) { setStatus(e.message, true); box.checked = !box.checked; }
+  provRender();
 });
 $('#prov-scan').addEventListener('click', async () => {
   const b = $('#prov-scan');

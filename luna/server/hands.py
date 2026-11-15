@@ -47,6 +47,10 @@ class HandsRoutes:
             _app().end_task()
             return self.send(502, {'error': str(exc)})
 
+    def _embed_apply(self):
+        """The embedder follows the provider: another service or a removed key must not leave texts going to the old one."""
+        _app().character.use_embeddings(providers.embed_spec() or _app().CONFIG.get('embeddings'))
+
     def handle_provider(self):
         """Settings: which network she thinks with. A key goes in, is checked and stored encrypted; the page only ever gets its last four characters back."""
         op = self.path[len('/provider/'):]
@@ -55,6 +59,16 @@ class HandsRoutes:
             pid = body.get('id') if isinstance(body.get('id'), str) else ''
             if op == 'state':
                 return self.send(200, providers.state())
+            if op == 'embed':
+                on = body.get('on')
+                if not isinstance(on, bool):
+                    raise ValueError('on')
+                if on and not providers.embed_possible():
+                    return self.send(409, {'error': 'prov:noembed'})
+                providers.set_embed(on)
+                self._embed_apply()
+                audit.log('embed', 'on' if on else 'off')
+                return self.send(200, providers.state())
             if op == 'key':
                 warn = providers.set_key(pid, body.get('key'))
                 audit.log('key.set', providers.CLOUD[pid]['name'])
@@ -62,10 +76,12 @@ class HandsRoutes:
                 return self.send(200, dict(providers.state(), warn=warn))
             if op == 'clear':
                 providers.clear_key(pid)
+                self._embed_apply()
                 audit.log('key.clear', (providers.CLOUD.get(pid) or {}).get('name', pid))
                 return self.send(200, providers.state())
             if op == 'select':
                 providers.select(pid)
+                self._embed_apply()
                 audit.log('provider', (providers.CLOUD.get(pid) or providers.LOCAL.get(pid))['name'])
                 _app().start_study()
                 return self.send(200, providers.state())

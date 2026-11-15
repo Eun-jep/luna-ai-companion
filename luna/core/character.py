@@ -347,10 +347,17 @@ def stat(fact):
 
 
 def use_embeddings(spec):
-    """Meaning-based recall with a local embedding model: spec 'ollama:nomic-embed-text' (settings.json key "embeddings"); anything else
-    switches back to the offline word-form match. The vectors are cached next to the memory, nothing leaves the computer."""
-    from luna.core import memory_store
+    """Meaning-based recall and tone. spec 'ollama:nomic-embed-text' (settings.json key "embeddings"): a local model, nothing leaves the
+    computer. spec 'cloud:<provider>': the service she already thinks with, only when the user turned it on in the settings (the texts
+    go to that service, as the chat does). Anything else switches back to the offline word-form match. Vectors are cached next to the memory."""
+    from luna.core import memory_store, providers
     feeling.reset()
+    if isinstance(spec, str) and spec.startswith('cloud:') and providers.embed_possible() and spec == 'cloud:' + providers._choice['active']:
+        memory_store.configure_cache(paths.data_file('memory-index.db'))
+        name, one, many = providers.embedder()
+        memory_store.set_embedder(name, one, many)
+        feeling.warm(name)
+        return True
     if isinstance(spec, str) and spec.startswith('ollama:') and len(spec) > 7:
         try:
             memory_store.configure_cache(paths.data_file('memory-index.db'))

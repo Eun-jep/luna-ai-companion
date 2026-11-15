@@ -1,10 +1,10 @@
 """The tone of his words by meaning, not by the words themselves: «меня всё достало» and «it's been a rough week» carry sadness without any word from a list.
 
-It works only when a real embedding model is connected (settings.json: "embeddings": "ollama:nomic-embed-text", local Ollama, see character.use_embeddings).
+It works only when a real embedding model is connected: local Ollama (settings.json: "embeddings": "ollama:nomic-embed-text") or, if the user turned it on in the settings, the cloud service she already uses (Gemini, OpenAI); see character.use_embeddings.
 Then the message is compared with a few example sentences per tone (four languages); the nearest tone wins if it is clearly closer than everyday talk.
 Without such a model it does nothing: the offline word-form vectors know nothing of meaning, and a guess would only put wrong feelings into her.
 character.sense() asks this only when its word lists found no tone. The thresholds were measured on nomic-embed-text with 52 labelled phrases (no false alarms, no wrong tone, about half of the real ones found); another model needs its own look: tools/feeling_check.py prints the scores for your phrases.
-Rude is never guessed from meaning: an offence is remembered and hurts, so it needs words. Nothing here leaves the computer."""
+Rude is never guessed from meaning: an offence is remembered and hurts, so it needs words. Nothing here leaves the computer unless the cloud option is on."""
 import threading
 import time
 
@@ -52,6 +52,7 @@ def _vectors(name, phrases):
 
 
 def _build(name):
+    memory_store.prefetch([p for phrases in (*EXAMPLES.values(), EVERYDAY) for p in phrases])   # a cloud embedder takes them in one request
     sets = {tone: _vectors(name, phrases) for tone, phrases in {**EXAMPLES, '': EVERYDAY}.items()}
     with _lock:
         _warming.discard(name)

@@ -42,9 +42,15 @@ LOCAL = {
     'jan': {'name': 'Jan', 'base': 'http://127.0.0.1:1337/v1', 'installed': ['%LOCALAPPDATA%\\Programs\\Jan', '%APPDATA%\\Jan']},
     'llamacpp': {'name': 'llama.cpp server', 'base': 'http://127.0.0.1:8080/v1', 'installed': [], 'which': 'llama-server'},
 }
+# Cloud services that have an embeddings endpoint in the OpenAI protocol (meaning-based memory and tone without a local model).
+# dims: the vector is cut to this many numbers and renormalised (both models are trained for that), so the cache stays small.
+EMBED = {
+    'gemini': {'model': 'gemini-embedding-001', 'dims': 768},
+    'openai': {'model': 'text-embedding-3-small', 'dims': 512},
+}
 VISION_HINT = re.compile(r'llava|vision|\bvl\b|-vl|vl:|gemma3|minicpm-v|moondream|bakllava|pixtral|qwen2\.5vl|qwen2-vl|internvl', re.I)
 
-_choice = {'active': '', 'model': {}, 'dismissed': []}
+_choice = {'active': '', 'model': {}, 'dismissed': [], 'embed': False}
 _keys = {}                     # id -> key, in memory only after decryption
 _models_cache = {}             # id -> [model ids]
 
@@ -124,6 +130,7 @@ def load():
                 _choice['active'] = data.get('active') if data.get('active') in {**CLOUD, **LOCAL} else ''
                 _choice['model'] = {k: v for k, v in (data.get('model') or {}).items() if isinstance(v, str)}
                 _choice['dismissed'] = [x for x in data.get('dismissed') or [] if x in LOCAL]
+                _choice['embed'] = data.get('embed') is True
         except (OSError, ValueError):
             pass
         env = os.environ.get('ZAI_API_KEY', '').strip()
@@ -326,7 +333,8 @@ def state():
               'model': _choice['model'].get(pid, spec['default']), 'url': spec['url']} for pid, spec in CLOUD.items()]
     for item in local:
         item['model'] = _choice['model'].get(item['id'], '')
-    return {'active': _choice['active'], 'ready': ready(), 'cloud': cloud, 'local': local}
+    return {'active': _choice['active'], 'ready': ready(), 'cloud': cloud, 'local': local,
+            'embed': {'on': _choice['embed'], 'can': embed_possible(), 'name': (CLOUD.get(_choice['active']) or {}).get('name', '')}}
 
 
 # ---- what app.py needs for one request ----
@@ -372,3 +380,41 @@ def endpoint(vision=False, model=None):
             headers['Authorization'] = 'Bearer ' + _keys[a]
         return {'url': spec['base'] + '/chat/completions', 'headers': headers, 'model': chosen, 'extra': spec.get('extra', {}),
                 'tokens': spec.get('tokens', 'max_tokens'), 'name': spec['name']}
+
+
+# ---- meaning-based memory and tone through the active cloud service (opt-in) ----
+
+def embed_possible():
+    """Can the active service embed texts? (only a cloud one with a key and an embeddings endpoint)"""
+    return _choice['active'] in EMBED and _choice['active'] in _keys
+
+
+def set_embed(on):
+    with _lock:
+        _choice['embed'] = bool(on)
+        _save_choice()
+
+
+def embed_spec():
+    """'cloud:<id>' when the user turned this on and the active service can do it, else ''."""
+    return 'cloud:' + _choice['active'] if _choice['embed'] and embed_possible() else ''
+
+
+def embedder(pid=None):
+    """-> (name, embed(text), embed_many(texts)) for memory_store.set_embedder. The key is read at call time and never leaves this module."""
+    pid = pid or _choice['active']
+    if pid not in EMBED:
+        raise ProviderError('unknown')
+    spec, base = EMBED[pid], CLOUD[pid]['base'] + '/embeddings'
+
+    def many(texts):
+        key = _keys.get(pid)
+        if not key:
+            raise ProviderError('nokey')
+        data = _call(base, key, {'model': spec['model'], 'input': list(texts)}, timeout=10)
+        rows = sorted((r for r in data['data'] if isinstance(r, dict)), key=lambda r: r.get('index', 0))
+        return [r['embedding'][:spec['dims']] for r in rows]
+
+    def one(text):
+        return many([text])[0]
+    return 'cloud:%s:%s' % (pid, spec['model']), one, many

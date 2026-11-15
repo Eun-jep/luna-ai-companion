@@ -811,6 +811,8 @@ if __name__ == '__main__':
     paths.migrate()                                   # data that an older version kept next to the program moves to %APPDATA%\Luna
     paths.seed('actions.json', ROOT / 'actions.example.json')
     providers.load()
+    if providers.embed_spec():
+        character.use_embeddings(providers.embed_spec())   # the user turned on meaning through the cloud service
     load_memory()
     start_study()
     devtools.start()   # engines, projects and code files: found by scanning, nothing is configured by hand

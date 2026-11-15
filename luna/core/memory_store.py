@@ -27,6 +27,9 @@ _CJK = re.compile(r'[぀-ヿ一-鿿가-힯]+')
 LOCK = threading.RLock()
 
 _embedder = None      # (name, callable) or None
+_batch = None         # optional: callable(list of texts) -> list of vectors, one request for many texts (cloud services are slow per call)
+_down_until = [0.0]   # after a failure the embedder is left alone for a while, so a dead network costs one timeout, not one per fact
+BREAKER = 45          # seconds
 _db_path = None       # where the vector cache lives (None = no cache, memory only)
 _mem_cache: dict = {}     # (model, text) -> vector, bounded
 _MEM_MAX = 2000
@@ -91,11 +94,14 @@ def cosine(a, b):
 
 
 # --- the optional real embedding model ---------------------------------------------------------------------------------------------------
-def set_embedder(name, function):
-    """Use `function(text) -> list[float]` (a real embedding model) named `name`; None switches back to the offline vectors."""
-    global _embedder
+def set_embedder(name, function, batch=None):
+    """Use `function(text) -> list[float]` (a real embedding model) named `name`; None switches back to the offline vectors.
+    batch (optional): `batch(texts) -> list of vectors`, used to embed many missing texts in one request."""
+    global _embedder, _batch
     with LOCK:
         _embedder = (name, function) if function else None
+        _batch = batch if function else None
+        _down_until[0] = 0.0
         _mem_cache.clear()
 
 
@@ -167,6 +173,8 @@ def vector(text):
         hit = _cached(name, text)
     if hit is not None:
         return name, hit
+    if time.time() < _down_until[0]:
+        return None, None
     try:
         vec = [float(x) for x in function(text)]
         if vec and all(math.isfinite(x) for x in vec):
@@ -176,7 +184,40 @@ def vector(text):
             return name, vec
     except Exception:   # a model that is down must never break recall
         pass
+    _down_until[0] = time.time() + BREAKER
     return None, None
+
+
+def prefetch(texts):
+    """Embed all the texts that are not cached yet in as few requests as the embedder allows (no-op without a batch function).
+    Failures are silent: vector() then tries one by one, or the word-form match takes over."""
+    with LOCK:
+        emb, batch = _embedder, _batch
+    if not emb or not batch or time.time() < _down_until[0]:
+        return
+    name = emb[0]
+    todo, seen = [], set()
+    for t in texts:
+        t = str(t)[:2000]
+        if t not in seen:
+            seen.add(t)
+            with LOCK:
+                if _cached(name, t) is None:
+                    todo.append(t)
+    for i in range(0, len(todo), 64):
+        chunk = todo[i:i + 64]
+        try:
+            vecs = batch(chunk)
+            if len(vecs) != len(chunk):
+                return
+            for t, v in zip(chunk, vecs):
+                v = [float(x) for x in v]
+                if v and all(math.isfinite(x) for x in v):
+                    with LOCK:
+                        _store(name, t, _unit(v))
+        except Exception:
+            _down_until[0] = time.time() + BREAKER
+            return
 
 
 def similarities(query, items):
@@ -184,6 +225,7 @@ def similarities(query, items):
     With an embedding model: cosine of the embeddings (rescaled so that unrelated texts give 0). Without one, or if it fails for any of the
     texts: the offline word-form match (fuzzy_similarity)."""
     items = [str(i) for i in items]
+    prefetch([query] + items)
     name, q = vector(query)
     if q is not None:
         vecs = [vector(i) for i in items]
