@@ -1,7 +1,7 @@
 -r requirements.txt
 pytest>=8,<10
 pytest-cov>=5
-pytest-xdist>=3.5      # параллельный запуск старых скриптовых тестов: pytest -n auto
+pytest-xdist>=3.5      # 기존 스크립트 테스트를 병렬로 실행: pytest -n auto
 ruff>=0.6
 mypy>=1.10
 playwright>=1.40   # e2e tests (uses the installed Edge; no browser download)
