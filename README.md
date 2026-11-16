@@ -237,7 +237,7 @@ py -m venv .venv && .venv\Scripts\python -m pip install -r requirements-dev.txt
 | 🧱 구조 · 안전 · 개발 | [ARCHITECTURE](docs/ARCHITECTURE.md) · [SECURITY](docs/SECURITY.md) · [DEVELOPMENT](docs/DEVELOPMENT.md) |
 | 📝 변경 기록 | [CHANGELOG.md](CHANGELOG.md) |
 
-> 구조·안전·개발 문서와 변경 기록은 현재 러시아어로 작성되어 있어요.
+> 상세 기능 사전 [docs/FEATURES.txt](docs/FEATURES.txt)는 러시아어 원본이에요. 같은 내용을 [한국어 안내](docs/ko/)로 정리해 두었어요.
 
 ## 📜 라이선스와 고지
 
